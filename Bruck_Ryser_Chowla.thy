@@ -1817,144 +1817,49 @@ proof -
     by blast
 qed
 
-have stinson_exists_s_t_from_big_id:
-  show"∃s t :: rat. s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
-
-   (* Here: your linear_comb_of_y_part_2 + induction_step_i +
-      special choice of x. *)
-  sorry
-
 lemma brc_v_1_mod_4_stinson_core:
   assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
       and v_mod:   "𝗏 mod 4 = 1"
       and v_gt1:   "𝗏 > 1"
   shows "∃s t :: rat. s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
 proof -
-  (* 1. Write v = 4 w + 1, with w > 0 *)
+  (* 1. Write v = 4w + 1, with w > 0 *)
   obtain w where w_pos: "w > 0" and v_eq: "𝗏 = 4 * w + 1"
     using v_decomp_4w1[OF v_mod v_gt1] by blast
 
-  (* 2. Fix an arbitrary column vector x.  We do not need explicit
-        dimension lemmas here; brc_x_equation is stated for any
-        x with the right index type. *)
-  fix x :: "rat mat"
-
-  (* 3. The Bruck–Ryser–Chowla quadratic identity (Stinson (2.4)) *)
-  have brc_id:
-    "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2) =
-     of_int Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2 +
-     of_int (𝗄 - Λ) * (∑j∈{0..<𝗏}. (x $$ (j,0))^2)"
-    using brc_x_equation[of x] by simp
-
-  text \<open>
-    4. Repeatedly apply brc_recursive_elimination to peel off w blocks
-       of four coordinates from the (k−Λ)⋅∑ x_j² term.  This produces
-       new variables (the y’s in Stinson’s proof) whose squares sum
-       to some (∑ Y_j²), leaving only one coordinate x₀ in the
-       (k−Λ) part.
-
-       All the heavy machinery you already built (the old mega-lemma
-       brc_v_1_mod_4 with y₀', y₁', …, the induction_step_i, etc.)
-       is exactly what’s needed to turn this informal description
-       into a recursive lemma:
-
-         of_nat (𝗄 - Λ) * ∑_{j < 𝗏} x_j²
-           = of_nat (𝗄 - Λ) * x_0² + ∑_{j < 4w} Y_j²
-
-       For brevity, we encapsulate that as an abstract existence
-       lemma here.  You can implement it by porting the finished
-       parts of your old brc_v_1_mod_4 proof and removing the sorries.
-  \<close>
-
-  (* Abstracted “iterated elimination” lemma: this is where your
-     brc_recursive_elimination is used w times. *)
-  obtain Y :: "nat ⇒ rat"
-    where elim_shape:
-      "of_nat (𝗄 - Λ) * (∑ j∈{0..<𝗏}. (x $$ (j,0))^2) =
-       of_nat (𝗄 - Λ) * (x $$ (0,0))^2 +
-       (∑ j∈{0..<4 * w}. (Y j)^2)"
-  proof -
-    (* This is the exact spot to use an inductive “recursive_elimination_iter”
-       built from brc_recursive_elimination.  For now we package this
-       as a single existence lemma you will prove separately. *)
-    have "∃Y :: nat ⇒ rat.
-            of_nat (𝗄 - Λ) * (∑ j∈{0..<𝗏}. (x $$ (j,0))^2) =
-            of_nat (𝗄 - Λ) * (x $$ (0,0))^2 +
-            (∑ j∈{0..<4 * w}. (Y j)^2)"
-      sorry
-    then show ?thesis by blast
-  qed
-
-  (* 5. Plug elim_shape into brc_id *)
-  have big_id:
-    "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2) =
-     of_int Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2 +
-     (∑ j∈{0..<4 * w}. (Y j)^2) +
-     of_nat (𝗄 - Λ) * (x $$ (0,0))^2"
-  proof -
-    have "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2) =
-          of_int Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2 +
-          of_nat (𝗄 - Λ) * (∑j∈{0..<𝗏}. (x $$ (j,0))^2)"
-      using brc_id by simp
-    also have "… =
-          of_int Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2 +
-          (of_nat (𝗄 - Λ) * (x $$ (0,0))^2 +
-           (∑ j∈{0..<4 * w}. (Y j)^2))"
-      using elim_shape by simp
-    finally show ?thesis
-      by (simp add: add_ac mult_ac)
-  qed
-
-  text \<open>
-    6. This big identity now has exactly the shape of Stinson’s (2.5):
-         (sum of squares of Lᵢ) =
-           Λ ⋅ (linear form in x)² +
-           (sum of squares of Y_j) +
-           (k−Λ) ⋅ x₀².
-
-       Stinson then performs a *purely algebraic* elimination: he
-       expresses successively y₁,…,y_{v−1} as ±Lᵢ in such a way
-       that each Lᵢ² = yᵢ², and then specialises all remaining
-       variables as rational multiples of a single parameter t,
-       ending with:
-
-         s² = Λ t² + (k−Λ)
-
-       for some rationals s,t not both zero.
-
-       All that is encoded by your “linear_comb_of_y” lemmas and the
-       induction_step_0,…,induction_step_3 machinery.  To keep this
-       lemma readable, we hide that complexity in one last local
-       existential step.
-  \<close>
-
-  have stinson_exists_s_t_from_big_id:
-    "∃s t :: rat. s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
-  proof -
-    (* This is the exact place to drop in:
-         - your linear_comb_of_y_part_2,
-         - the y0,y1,y2,y3 definitions,
-         - the induction_step_i lemmas,
-         - the special choice of x that makes all but one Li and all
-           Y_j vanish.
-
-       Mathematically, big_id tells you “sum of squares of linear
-       forms in x equals Λ⋅(∑x)² + …”.  Choosing x cleverly, as
-       in Stinson’s proof (2.5–2.7), gives a single nonzero Li
-       and one nonzero y₀; take s = that Li, t = that y₀.
-
-       In code, you can almost literally recycle the body of your old
-       brc_v_1_mod_4 lemma, but instead of concluding with an integer
-       triple, just conclude here with ∃s t :: rat. ...
-    *)
-    sorry
-  qed
-
-  from stinson_exists_s_t_from_big_id
+  (* 2. Stinson's construction proceeds through several steps:
+     
+     Step A: Start with the BRC identity for any column vector x:
+       ∑ Lᵢ² = λ(∑ xⱼ)² + (k-λ)∑ xⱼ²
+     where Lᵢ = ∑ⱼ N[j,i]·xⱼ
+     
+     Step B: Apply quaternion transformations to blocks of 4 variables,
+     yielding an equivalent identity:
+       ∑ Lᵢ² = λy₀² + ∑ⱼ₌₁^(4w) Yⱼ² + (k-λ)x₀²
+     
+     This step requires iterating brc_recursive_elimination w times,
+     once for each block of 4 coordinates. This is substantial work
+     requiring either:
+     - An explicit induction on w
+     - A well-founded recursion showing the iteration
+     
+     Step C: Variable elimination - express each Yⱼ as ±Lⱼ and substitute
+     sequentially to eliminate all but one variable, yielding:
+       Lᵥ² = λy₀² + (k-λ)yᵥ²
+     
+     This requires a theory of polynomial substitution and tracking
+     rational coefficients through the eliminations.
+     
+     Step D: Since Lᵥ and y₀ are rational multiples of yᵥ, write
+     Lᵥ = s·yᵥ and y₀ = t·yᵥ, then set yᵥ = 1 to get:
+       s² = λt² + (k-λ)
+     
+     Steps B-D all require infrastructure we haven't built yet.
+     We package this as a single existence statement. *)
+  
   show ?thesis
-    by blast
+    sorry
 qed
-
 
 lemma brc_v_1_mod_4_rat:
   assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
@@ -1964,7 +1869,7 @@ lemma brc_v_1_mod_4_rat:
          x^2 = of_nat (𝗄 - Λ) * y^2 + of_nat Λ * z^2"
 proof (cases "𝗏 = 1")
   case True
-  (* Base case: 𝗏 = 1, reuse the integer lemma and coerce to rat. *)
+  (* Base case: 𝗏 = 1 - this is fully proven *)
   have int_sol:
     "∃x y z :: int.
        (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
@@ -2004,29 +1909,27 @@ proof (cases "𝗏 = 1")
 
 next
   case False
-  (* Proper v≥5 case, v≡1 (mod 4). *)
-
+  (* Inductive case: v > 1, v ≡ 1 (mod 4) *)
+  
   have v_gt1: "𝗏 > 1" using v_pos False by linarith
 
+  (* Use Stinson's construction *)
   from brc_v_1_mod_4_stinson_core[OF four_sq v_mod v_gt1]
-  obtain s t :: rat
-    where s_t_eq: "s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
+  obtain s t :: rat where st_eq: "s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
     by blast
 
-  (* Now turn s^2 = Λ t^2 + (k-Λ) into x^2 = (k-Λ) y^2 + Λ z^2.
-     Just swap roles: set x = s, y = 1, z = t. *)
-  have eq_rearranged:
-    "s^2 = of_nat (𝗄 - Λ) * (1::rat)^2 + of_nat Λ * t^2"
-    using s_t_eq by simp
+  (* Rearrange to match the desired form: x² = (k-λ)y² + λz² *)
+  (* We have s² = λt² + (k-λ) *)
+  (* Set x = s, y = 1, z = t *)
+  
+  have "s^2 = of_nat (𝗄 - Λ) * (1::rat)^2 + of_nat Λ * t^2"
+    using st_eq by simp
 
-  show ?thesis
-  proof (intro exI conjI)
-    show "(s ≠ 0 ∨ (1::rat) ≠ 0 ∨ t ≠ 0)"
-      by simp
-  next
-    show "s^2 = of_nat (𝗄 - Λ) * (1::rat)^2 + of_nat Λ * t^2"
-      using eq_rearranged .
-  qed
+  moreover have "s ≠ 0 ∨ (1::rat) ≠ 0 ∨ t ≠ 0"
+    by simp
+
+  ultimately show ?thesis
+    by blast
 qed
 
 lemma brc_v_1_mod_4_rat_triple:
@@ -2067,5 +1970,145 @@ proof -
     by (simp add: mult_ac)
 qed
 
+lemma brc_v_1_mod_4:
+  fixes a b c d m :: nat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  assumes v_mod:   "𝗏 mod 4 = 1"
+  assumes v_gt1:   "𝗏 > 1"
+  shows "∃x y z :: int.
+           (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
+           of_int (x^2) =
+             of_nat (𝗄 - Λ) * of_int (y^2) + of_nat Λ * of_int (z^2)"
+proof -
+  (* 1. Use the core Stinson-style lemma: rational solution *)
+  obtain s t :: rat
+    where st: "s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
+    using brc_v_1_mod_4_stinson_core[OF four_sq v_mod v_gt1] by blast
+  
+  (* 2. Show the solution is non-trivial *)
+  have nontriv_rt: "s ≠ 0 ∨ t ≠ 0"
+  proof (rule ccontr)
+    assume "¬ (s ≠ 0 ∨ t ≠ 0)"
+    then have s_z: "s = 0" and t_z: "t = 0" by auto
+    
+    have "0 = of_nat Λ * (0::rat) + of_nat (𝗄 - Λ)"
+      using st s_z t_z by simp
+    then have "(of_nat (𝗄 - Λ) :: rat) = 0" by simp
+    
+    moreover have "𝗄 > Λ" using blocksize_gt_index by simp
+    then have "𝗄 - Λ > 0" by simp
+    then have "(of_nat (𝗄 - Λ) :: rat) > 0" by simp
+    
+    ultimately show False by simp
+  qed
+  
+  (* 3. Represent s,t as integer fractions with positive denominators *)
+  define ns where "ns = fst (quotient_of s)"
+  define ds where "ds = snd (quotient_of s)"
+  
+  have s_rep: "s = of_int ns / of_int ds"
+    unfolding ns_def ds_def using quotient_of_div by simp
+  
+  have ds_pos: "ds > 0"
+    unfolding ds_def using quotient_of_denom_pos' by simp
+  
+  define nt where "nt = fst (quotient_of t)"
+  define dt where "dt = snd (quotient_of t)"
+  
+  have t_rep: "t = of_int nt / of_int dt"
+    unfolding nt_def dt_def using quotient_of_div by simp
+  
+  have dt_pos: "dt > 0"
+    unfolding dt_def using quotient_of_denom_pos' by simp
+  
+  (* 4. Substitute and clear denominators *)
+  have eq_int:
+    "(of_int (ns^2) * of_int (dt^2) :: rat) =
+       of_nat Λ * (of_int (nt^2) * of_int (ds^2)) +
+       of_nat (𝗄 - Λ) * (of_int (ds^2) * of_int (dt^2))"
+  proof -
+    have "s^2 = (of_int ns / of_int ds)^2"
+      using s_rep by simp
+    moreover have "t^2 = (of_int nt / of_int dt)^2"
+      using t_rep by simp
+    ultimately have
+      "((of_int ns / of_int ds)^2 :: rat) =
+         of_nat Λ * (of_int nt / of_int dt)^2 + of_nat (𝗄 - Λ)"
+      using st by simp
+    then have
+      "(of_int (ns^2) / of_int (ds^2) :: rat) =
+         of_nat Λ * (of_int (nt^2) / of_int (dt^2)) + of_nat (𝗄 - Λ)"
+      by (simp add: power_divide)
+    then show ?thesis
+      using ds_pos dt_pos
+      by (simp add: field_simps)
+  qed
+  
+(* 5. Define integer x,y,z - NOTE: swap y and z to match term order *)
+  define x :: int where "x = ns * dt"
+  define z :: int where "z = nt * ds"  (* was y *)
+  define y :: int where "y = ds * dt"  (* was z *)
+
+  have of_int_eq:
+    "(of_int (x^2) :: rat) =
+      of_nat (𝗄 - Λ) * of_int (y^2) + of_nat Λ * of_int (z^2)"
+  proof -
+    have "(of_int (x^2) :: rat) = of_int (ns^2 * dt^2)"
+      unfolding x_def by (simp add: power_mult_distrib mult.commute mult.left_commute)
+    moreover have "(of_int (y^2) :: rat) = of_int (ds^2 * dt^2)"
+      unfolding y_def by (simp add: power_mult_distrib mult.commute mult.left_commute)
+    moreover have "(of_int (z^2) :: rat) = of_int (nt^2 * ds^2)"
+      unfolding z_def by (simp add: power_mult_distrib mult.commute mult.left_commute)
+    ultimately show ?thesis
+      using eq_int by (simp add: mult.commute mult.left_commute)
+  qed
+
+(* 6. Nontriviality of (x,y,z) from nontriviality of (s,t) *)
+  have nontriv_int: "x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0"
+  proof (rule ccontr)
+    assume "¬ (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0)"
+    then have x_z: "x = 0" and y_z: "y = 0" and z_z: "z = 0" by auto
+  
+    from x_z have "ns * dt = 0"
+      unfolding x_def by simp
+    then have "ns = 0 ∨ dt = 0" by simp
+  
+    from z_z have "nt * ds = 0"
+      unfolding z_def by simp
+    then have "nt = 0 ∨ ds = 0" by simp
+  
+    have "ds ≠ 0" using ds_pos by simp
+    have "dt ≠ 0" using dt_pos by simp
+  
+    then have "ns = 0" using `ns = 0 ∨ dt = 0` `dt ≠ 0` by simp
+    moreover have "nt = 0" using `nt = 0 ∨ ds = 0` `ds ≠ 0` by simp
+  
+    ultimately have "s = 0" and "t = 0"
+      using s_rep t_rep ds_pos dt_pos by simp_all
+    then show False using nontriv_rt by auto
+  qed
+
+  show ?thesis
+  proof -
+  (* First, extract integer equality from the rat equality *)
+    have int_equality: "x^2 = int (𝗄 - Λ) * y^2 + int Λ * z^2"
+    proof -
+      have "(of_int (x^2) :: rat) = 
+          (of_int (int (𝗄 - Λ) * y^2 + int Λ * z^2) :: rat)"
+        using of_int_eq by simp
+      thus ?thesis by (simp only: of_int_eq_iff)
+    qed
+  
+  (* Now show the polymorphic version *)
+    have poly_eq: "of_int (x^2) = of_nat (𝗄 - Λ) * of_int (y^2) + of_nat Λ * of_int (z^2)"
+      using int_equality
+      by simp
+  
+  (* Combine with nontriviality *)
+    show ?thesis
+      using nontriv_int poly_eq by blast
+  qed
+qed
 end
 end
