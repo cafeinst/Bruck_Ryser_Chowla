@@ -1789,16 +1789,245 @@ proof -
     by simp
 qed
 
-lemma brc_v_1_mod_4_rat:
+lemma v_decomp_4w1:
+  assumes v_mod: "𝗏 mod 4 = 1"
+      and v_gt1: "𝗏 > 1"
+  shows "∃w>0. 𝗏 = 4 * w + 1"
+proof -
+  (* From v ≡ 1 (mod 4) we know v = 4 * q + 1 for some q *)
+  define w where "w = 𝗏 div 4"
+  
+  have v_eq: "𝗏 = 4 * w + 1"
+  proof -
+    have "𝗏 = 4 * (𝗏 div 4) + (𝗏 mod 4)"
+      by (simp add: div_mult_mod_eq)
+    then show ?thesis
+      using v_mod unfolding w_def by simp
+  qed
+  
+  (* Show w>0 from v>1 *)
+  have "w > 0"
+  proof -
+    have "4 * w + 1 > 1" using v_eq v_gt1 by simp
+    hence "4 * w ≥ 1" by linarith
+    thus "w > 0" by simp
+  qed
+  
+  with v_eq show ?thesis
+    by blast
+qed
+
+have stinson_exists_s_t_from_big_id:
+  show"∃s t :: rat. s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
+
+   (* Here: your linear_comb_of_y_part_2 + induction_step_i +
+      special choice of x. *)
+  sorry
+
+lemma brc_v_1_mod_4_stinson_core:
   assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
       and v_mod:   "𝗏 mod 4 = 1"
-      and v_pos:   "𝗏 > 0"    (* or whatever basic assumptions you already have *)
-  shows "∃s t :: rat.
-           (s ≠ 0 ∨ t ≠ 0) ∧
-           s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
-  (* proof: this is where all your brc_x_equation, brc_recursive_elimination,
-     lagrange_identity_y, induction_step_0–3, etc. live. *)
-  sorry
+      and v_gt1:   "𝗏 > 1"
+  shows "∃s t :: rat. s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
+proof -
+  (* 1. Write v = 4 w + 1, with w > 0 *)
+  obtain w where w_pos: "w > 0" and v_eq: "𝗏 = 4 * w + 1"
+    using v_decomp_4w1[OF v_mod v_gt1] by blast
+
+  (* 2. Fix an arbitrary column vector x.  We do not need explicit
+        dimension lemmas here; brc_x_equation is stated for any
+        x with the right index type. *)
+  fix x :: "rat mat"
+
+  (* 3. The Bruck–Ryser–Chowla quadratic identity (Stinson (2.4)) *)
+  have brc_id:
+    "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2) =
+     of_int Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2 +
+     of_int (𝗄 - Λ) * (∑j∈{0..<𝗏}. (x $$ (j,0))^2)"
+    using brc_x_equation[of x] by simp
+
+  text \<open>
+    4. Repeatedly apply brc_recursive_elimination to peel off w blocks
+       of four coordinates from the (k−Λ)⋅∑ x_j² term.  This produces
+       new variables (the y’s in Stinson’s proof) whose squares sum
+       to some (∑ Y_j²), leaving only one coordinate x₀ in the
+       (k−Λ) part.
+
+       All the heavy machinery you already built (the old mega-lemma
+       brc_v_1_mod_4 with y₀', y₁', …, the induction_step_i, etc.)
+       is exactly what’s needed to turn this informal description
+       into a recursive lemma:
+
+         of_nat (𝗄 - Λ) * ∑_{j < 𝗏} x_j²
+           = of_nat (𝗄 - Λ) * x_0² + ∑_{j < 4w} Y_j²
+
+       For brevity, we encapsulate that as an abstract existence
+       lemma here.  You can implement it by porting the finished
+       parts of your old brc_v_1_mod_4 proof and removing the sorries.
+  \<close>
+
+  (* Abstracted “iterated elimination” lemma: this is where your
+     brc_recursive_elimination is used w times. *)
+  obtain Y :: "nat ⇒ rat"
+    where elim_shape:
+      "of_nat (𝗄 - Λ) * (∑ j∈{0..<𝗏}. (x $$ (j,0))^2) =
+       of_nat (𝗄 - Λ) * (x $$ (0,0))^2 +
+       (∑ j∈{0..<4 * w}. (Y j)^2)"
+  proof -
+    (* This is the exact spot to use an inductive “recursive_elimination_iter”
+       built from brc_recursive_elimination.  For now we package this
+       as a single existence lemma you will prove separately. *)
+    have "∃Y :: nat ⇒ rat.
+            of_nat (𝗄 - Λ) * (∑ j∈{0..<𝗏}. (x $$ (j,0))^2) =
+            of_nat (𝗄 - Λ) * (x $$ (0,0))^2 +
+            (∑ j∈{0..<4 * w}. (Y j)^2)"
+      sorry
+    then show ?thesis by blast
+  qed
+
+  (* 5. Plug elim_shape into brc_id *)
+  have big_id:
+    "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2) =
+     of_int Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2 +
+     (∑ j∈{0..<4 * w}. (Y j)^2) +
+     of_nat (𝗄 - Λ) * (x $$ (0,0))^2"
+  proof -
+    have "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2) =
+          of_int Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2 +
+          of_nat (𝗄 - Λ) * (∑j∈{0..<𝗏}. (x $$ (j,0))^2)"
+      using brc_id by simp
+    also have "… =
+          of_int Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2 +
+          (of_nat (𝗄 - Λ) * (x $$ (0,0))^2 +
+           (∑ j∈{0..<4 * w}. (Y j)^2))"
+      using elim_shape by simp
+    finally show ?thesis
+      by (simp add: add_ac mult_ac)
+  qed
+
+  text \<open>
+    6. This big identity now has exactly the shape of Stinson’s (2.5):
+         (sum of squares of Lᵢ) =
+           Λ ⋅ (linear form in x)² +
+           (sum of squares of Y_j) +
+           (k−Λ) ⋅ x₀².
+
+       Stinson then performs a *purely algebraic* elimination: he
+       expresses successively y₁,…,y_{v−1} as ±Lᵢ in such a way
+       that each Lᵢ² = yᵢ², and then specialises all remaining
+       variables as rational multiples of a single parameter t,
+       ending with:
+
+         s² = Λ t² + (k−Λ)
+
+       for some rationals s,t not both zero.
+
+       All that is encoded by your “linear_comb_of_y” lemmas and the
+       induction_step_0,…,induction_step_3 machinery.  To keep this
+       lemma readable, we hide that complexity in one last local
+       existential step.
+  \<close>
+
+  have stinson_exists_s_t_from_big_id:
+    "∃s t :: rat. s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
+  proof -
+    (* This is the exact place to drop in:
+         - your linear_comb_of_y_part_2,
+         - the y0,y1,y2,y3 definitions,
+         - the induction_step_i lemmas,
+         - the special choice of x that makes all but one Li and all
+           Y_j vanish.
+
+       Mathematically, big_id tells you “sum of squares of linear
+       forms in x equals Λ⋅(∑x)² + …”.  Choosing x cleverly, as
+       in Stinson’s proof (2.5–2.7), gives a single nonzero Li
+       and one nonzero y₀; take s = that Li, t = that y₀.
+
+       In code, you can almost literally recycle the body of your old
+       brc_v_1_mod_4 lemma, but instead of concluding with an integer
+       triple, just conclude here with ∃s t :: rat. ...
+    *)
+    sorry
+  qed
+
+  from stinson_exists_s_t_from_big_id
+  show ?thesis
+    by blast
+qed
+
+
+lemma brc_v_1_mod_4_rat:
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+      and v_mod:   "𝗏 mod 4 = 1"  
+      and v_pos:   "𝗏 > 0"
+  shows "∃x y z :: rat. (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
+         x^2 = of_nat (𝗄 - Λ) * y^2 + of_nat Λ * z^2"
+proof (cases "𝗏 = 1")
+  case True
+  (* Base case: 𝗏 = 1, reuse the integer lemma and coerce to rat. *)
+  have int_sol:
+    "∃x y z :: int.
+       (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
+       (of_int (x^2) :: rat) =
+         of_nat (𝗄 - Λ) * of_int (y^2) + of_nat Λ * of_int (z^2)"
+    using brc_v_eq_1[OF True four_sq] by blast
+  
+  then obtain x_int y_int z_int :: int where
+    nz: "x_int ≠ 0 ∨ y_int ≠ 0 ∨ z_int ≠ 0" and
+    eq_poly: "(of_int (x_int^2) :: rat) =
+              of_nat (𝗄 - Λ) * of_int (y_int^2) + of_nat Λ * of_int (z_int^2)"
+    by blast
+  
+  define x :: rat where "x = of_int x_int"
+  define y :: rat where "y = of_int y_int"
+  define z :: rat where "z = of_int z_int"
+
+  have nz_rat: "x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0"
+    using nz unfolding x_def y_def z_def by simp
+
+  have eq_rat: "x^2 = of_nat (𝗄 - Λ) * y^2 + of_nat Λ * z^2"
+  proof -
+    have "(of_int (x_int^2) :: rat) =
+            of_nat (𝗄 - Λ) * of_int (y_int^2) + of_nat Λ * of_int (z_int^2)"
+      using eq_poly .
+    hence "(of_int x_int :: rat)^2 =
+             of_nat (𝗄 - Λ) * (of_int y_int :: rat)^2 +
+             of_nat Λ * (of_int z_int :: rat)^2"
+      by simp
+    thus ?thesis
+      unfolding x_def y_def z_def .
+  qed
+
+  show ?thesis
+    by (intro exI[of _ x] exI[of _ y] exI[of _ z] conjI)
+       (use nz_rat eq_rat in auto)
+
+next
+  case False
+  (* Proper v≥5 case, v≡1 (mod 4). *)
+
+  have v_gt1: "𝗏 > 1" using v_pos False by linarith
+
+  from brc_v_1_mod_4_stinson_core[OF four_sq v_mod v_gt1]
+  obtain s t :: rat
+    where s_t_eq: "s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
+    by blast
+
+  (* Now turn s^2 = Λ t^2 + (k-Λ) into x^2 = (k-Λ) y^2 + Λ z^2.
+     Just swap roles: set x = s, y = 1, z = t. *)
+  have eq_rearranged:
+    "s^2 = of_nat (𝗄 - Λ) * (1::rat)^2 + of_nat Λ * t^2"
+    using s_t_eq by simp
+
+  show ?thesis
+  proof (intro exI conjI)
+    show "(s ≠ 0 ∨ (1::rat) ≠ 0 ∨ t ≠ 0)"
+      by simp
+  next
+    show "s^2 = of_nat (𝗄 - Λ) * (1::rat)^2 + of_nat Λ * t^2"
+      using eq_rearranged .
+  qed
+qed
 
 lemma brc_v_1_mod_4_rat_triple:
   assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
@@ -1807,25 +2036,18 @@ lemma brc_v_1_mod_4_rat_triple:
   shows "∃x y z :: rat.
            (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
            x^2 = of_nat (𝗄 - Λ) * y^2 + of_nat Λ * z^2"
-proof -
-  obtain s t :: rat
-    where nz:  "s ≠ 0 ∨ t ≠ 0"
-      and eq:  "s^2 = of_nat Λ * t^2 + of_nat (𝗄 - Λ)"
-    using brc_v_1_mod_4_rat[OF four_sq v_mod v_pos] by blast
+  using brc_v_1_mod_4_rat[OF four_sq v_mod v_pos] .
 
-  (* Re-express as (𝗄-Λ)*1^2 + Λ*t^2 *)
-  have eq': "s^2 = of_nat (𝗄 - Λ) * (1::rat)^2 + of_nat Λ * t^2"
-    using eq by simp
-
-  (* Instantiate the existential with x = s, y = 1, z = t *)
-  show ?thesis
-  proof (rule exI[of _ s], rule exI[of _ 1], rule exI[of _ t])
-    from nz eq'
-    show "(s ≠ 0 ∨ 1 ≠ (0::rat) ∨ t ≠ 0) ∧
-          s^2 = of_nat (𝗄 - Λ) * 1^2 + of_nat Λ * t^2"
-      by simp
-  qed
-qed
+lemma brc_v_1_mod_4_rat_triple_aux:
+  fixes a b c d m :: nat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+      and v_mod:   "𝗏 mod 4 = 1"
+      and m_props: "m > 3" "𝗏 ≥ m"
+      and v_pos:   "𝗏 > 0"
+  shows "∃x y z :: rat.
+           (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
+           x^2 = of_nat (𝗄 - Λ) * y^2 + of_nat Λ * z^2"
+  using brc_v_1_mod_4_rat_triple[OF four_sq v_mod v_pos] by blast
 
 lemma brc_v_1_mod_4_int:
   assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
@@ -1835,435 +2057,15 @@ lemma brc_v_1_mod_4_int:
            (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
            of_int x^2 = of_nat (𝗄 - Λ) * of_int y^2 + of_nat Λ * of_int z^2"
 proof -
-  have rat_sol:
-    "∃x y z :: rat.
+  have rat_sol: "∃x y z :: rat.
        (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
        x^2 = of_nat (𝗄 - Λ) * y^2 + of_nat Λ * z^2"
-    using brc_v_1_mod_4_rat_triple[OF four_sq v_mod v_pos] .
+    using brc_v_1_mod_4_rat[OF four_sq v_mod v_pos] .
 
-  (* Now directly use your conversion lemma *)
   from rat_square_eq_to_int[OF rat_sol[unfolded]] 
   show ?thesis
     by (simp add: mult_ac)
 qed
-
-(*lemma brc_v_1_mod_4:
-  fixes a b c d m :: nat
-  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
-  assumes m_props: "m > 3" "𝗏 ≥ m"
-  assumes v_mod: "𝗏 mod 4 = 1"
-  shows "∃x y z :: int. (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
-         of_int(x^2) = of_nat(𝗄 - Λ) * of_int(y^2) + of_nat Λ * of_int(z^2)"
-proof -
-  (* Start with arbitrary y-values to get coefficients *)
-  fix y0' y1' y2' y3' :: rat
-  
-  (* Define x-values from y-values using y_inv_of *)
-  define x0 where "x0 = one_of(y_inv_of((a, b, c, d), (y0', y1', y2', y3')))"
-  define x1 where "x1 = two_of(y_inv_of((a, b, c, d), (y0', y1', y2', y3')))"
-  define x2 where "x2 = three_of(y_inv_of((a, b, c, d), (y0', y1', y2', y3')))"
-  define x3 where "x3 = four_of(y_inv_of((a, b, c, d), (y0', y1', y2', y3')))"
-  
-  define x :: "rat mat" where "x = mat m 1 (λ(i, j).
-     if j = 0 then
-       if i = m - 4 then x0
-       else if i = m - 3 then x1
-       else if i = m - 2 then x2
-       else if i = m - 1 then x3
-       else 0
-     else 0)"
-  
-  (* Establish x matrix indexing *)
-  have "0 < (1::nat)" by simp
-  have "m - 4 < m" using m_props by simp
-  have "m - 3 < m" using m_props by simp
-  have "m - 2 < m" using m_props by simp
-  have "m - 1 < m" using m_props by simp
-  
-  have "m - 3 ≠ m - 4" using m_props by simp
-  have "m - 2 ≠ m - 4" using m_props by simp
-  have "m - 2 ≠ m - 3" using m_props by simp
-  have "m - 1 ≠ m - 4" using m_props by simp
-  have "m - 1 ≠ m - 3" using m_props by simp
-  have "m - 1 ≠ m - 2" using m_props by simp
-  
-  have x_at_m4: "x $$ (m - 4, 0) = x0"
-    using x_def m_props `m - 4 < m` `0 < 1` by simp
-  
-  have x_at_m3: "x $$ (m - 3, 0) = x1"
-    using x_def m_props `m - 3 < m` `0 < 1` `m - 3 ≠ m - 4` by simp
-  
-  have x_at_m2: "x $$ (m - 2, 0) = x2"
-    using x_def m_props `m - 2 < m` `0 < 1` `m - 2 ≠ m - 4` `m - 2 ≠ m - 3` by simp
-  
-  have x_at_m1: "x $$ (m - 1, 0) = x3"
-    using x_def m_props `m - 1 < m` `0 < 1` `m - 1 ≠ m - 4` `m - 1 ≠ m - 3` `m - 1 ≠ m - 2` by simp
-
-  have i0_in: "(0::nat) ∈ {0..<4}" by simp
-  have i1_in: "(1::nat) ∈ {0..<4}" by simp
-  have i2_in: "(2::nat) ∈ {0..<4}" by simp
-  have i3_in: "(3::nat) ∈ {0..<4}" by simp
-
-  have "∃e0 e1 e2 e3. (∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-0-1)) * x $$ (m-h-1,0)) = 
-                      e0 * y0' + e1 * y1' + e2 * y2' + e3 * y3' +
-                      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-0-1)) * x $$ (m-h-1,0))"
-    using linear_comb_of_y_part_2 four_sq m_props i0_in x_at_m4 x_at_m3 x_at_m2 x_at_m1
-        x0_def x1_def x2_def x3_def
-    by blast
-  then obtain e00 e10 e20 e30 where Li0:
-    "(∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-0-1)) * x $$ (m-h-1,0)) = 
-    e00 * y0' + e10 * y1' + e20 * y2' + e30 * y3' +
-    (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-0-1)) * x $$ (m-h-1,0))"
-    by blast
-
-  have "∃e0 e1 e2 e3. (∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-1-1)) * x $$ (m-h-1,0)) = 
-                      e0 * y0' + e1 * y1' + e2 * y2' + e3 * y3' +
-                      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-1-1)) * x $$ (m-h-1,0))"
-    using linear_comb_of_y_part_2 four_sq m_props i1_in x_at_m4 x_at_m3 x_at_m2 x_at_m1
-        x0_def x1_def x2_def x3_def
-    by blast
-  then obtain e01 e11 e21 e31 where Li1:
-    "(∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-1-1)) * x $$ (m-h-1,0)) = 
-    e01 * y0' + e11 * y1' + e21 * y2' + e31 * y3' +
-    (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-1-1)) * x $$ (m-h-1,0))"
-    by blast
-
-  have "∃e0 e1 e2 e3. (∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-2-1)) * x $$ (m-h-1,0)) = 
-                      e0 * y0' + e1 * y1' + e2 * y2' + e3 * y3' +
-                      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-2-1)) * x $$ (m-h-1,0))"
-    using linear_comb_of_y_part_2 four_sq m_props i2_in x_at_m4 x_at_m3 x_at_m2 x_at_m1
-        x0_def x1_def x2_def x3_def
-    by blast
-  then obtain e02 e12 e22 e32 where Li2:
-    "(∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-2-1)) * x $$ (m-h-1,0)) = 
-    e02 * y0' + e12 * y1' + e22 * y2' + e32 * y3' +
-    (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-2-1)) * x $$ (m-h-1,0))"
-    by blast
-
-  have "∃e0 e1 e2 e3. (∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-3-1)) * x $$ (m-h-1,0)) = 
-                      e0 * y0' + e1 * y1' + e2 * y2' + e3 * y3' +
-                      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-3-1)) * x $$ (m-h-1,0))"
-    using linear_comb_of_y_part_2 four_sq m_props i3_in x_at_m4 x_at_m3 x_at_m2 x_at_m1
-        x0_def x1_def x2_def x3_def
-    by blast
-  then obtain e03 e13 e23 e33 where Li3:
-    "(∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-3-1)) * x $$ (m-h-1,0)) = 
-    e03 * y0' + e13 * y1' + e23 * y2' + e33 * y3' +
-    (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-3-1)) * x $$ (m-h-1,0))"
-    by blast
-
-  (* Now redefine y-values using those coefficients *)
-  define y0 where "y0 = (if e00 = 1 then 
-    -(e10 * y1' + e20 * y2' + e30 * y3' +
-      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
-      (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-4)) * x $$ (h,0)))/2 
-    else  
-      (e10 * y1' + e20 * y2' + e30 * y3' +
-      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
-      (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-4)) * x $$ (h,0)))/(1-e00))"
-      
-  define y1 where "y1 = (if e11 = 1 then 
-    -(e01 * y0' + e21 * y2' + e31 * y3' +
-      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
-      (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-3)) * x $$ (h,0)))/2 
-    else  
-      (e01 * y0' + e21 * y2' + e31 * y3' +
-      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
-      (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-3)) * x $$ (h,0)))/(1-e11))"
-      
-  define y2 where "y2 = (if e22 = 1 then 
-    -(e02 * y0' + e12 * y1' + e32 * y3' +
-      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
-      (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-2)) * x $$ (h,0)))/2 
-    else  
-      (e02 * y0' + e12 * y1' + e32 * y3' +
-      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
-      (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-2)) * x $$ (h,0)))/(1-e22))"
-      
-  define y3 where "y3 = (if e33 = 1 then 
-    -(e03 * y0' + e13 * y1' + e23 * y2' +
-      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
-      (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-1)) * x $$ (h,0)))/2 
-    else  
-      (e03 * y0' + e13 * y1' + e23 * y2' +
-      (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
-      (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-1)) * x $$ (h,0)))/(1-e33))"
-
-  (* Define the L's *)
-  define L0 where "L0 = (∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
-                        (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-4)) * x $$ (h,0))"
-  define L1 where "L1 = (∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
-                        (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-3)) * x $$ (h,0))"
-  define L2 where "L2 = (∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
-                        (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-2)) * x $$ (h,0))"
-  define L3 where "L3 = (∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
-                        (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-1)) * x $$ (h,0))"
-
-  (* Key algebra: split the sum *)
-  have sumdef: "(∑j ∈ {0..<4}.((∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-j-1)) * x $$ (m-h-1,0)) +
-                 (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-j-1)) * x $$ (h,0)))^2) = 
-                  L0^2 + L1^2 + L2^2 + L3^2"
-     unfolding L0_def L1_def L2_def L3_def
-     by (simp add: numeral.simps(2,3))
-
-  have split1: "{0..<m} = {0..<4} ∪ {4..<m}" using m_props by auto
-  have inter1: "{0..<4} ∩ {4..<m} = {}" by auto
-  
-  have trick1: "(∑j ∈ {0..<m}. ((∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-j-1)) * x $$ (m-h-1,0)) +
-                 (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-j-1)) * x $$ (h,0)))^2) =
-        (∑j ∈ {0..<4}. ((∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-j-1)) * x $$ (m-h-1,0)) +
-                 (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-j-1)) * x $$ (h,0)))^2) + 
-        (∑j ∈ {4..<m}. ((∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-j-1)) * x $$ (m-h-1,0)) +
-                 (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-j-1)) * x $$ (h,0)))^2)"
-  proof -
-    have "finite ({0..<4} :: nat set)" by simp
-    have "finite ({4..<m} :: nat set)" by simp
-    have "{0..<4} ∩ {4..<m} = {}" using inter1 by simp
-    have "{0..<m} = {0..<4} ∪ {4..<m}" using split1 by simp
-    show ?thesis
-      using sum.union_disjoint[OF `finite {0..<4}` `finite {4..<m}` `{0..<4} ∩ {4..<m} = {}`,
-          of "λj. ((∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-j-1)) * x $$ (m-h-1,0)) +
-                   (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-j-1)) * x $$ (h,0)))^2"]
-          `{0..<m} = {0..<4} ∪ {4..<m}` by simp
-  qed
-    
-  then have lhs: "(∑j ∈ {0..<m}. ((∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-j-1)) * x $$ (m-h-1,0)) +
-                  (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-j-1)) * x $$ (h,0)))^2) =
-                  L0^2 + L1^2 + L2^2 + L3^2 + 
-                  (∑j ∈ {4..<m}. ((∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-j-1)) * x $$ (m-h-1,0)) +
-                  (∑h ∈ {m..<𝗏}. of_int(N $$ (h,m-j-1)) * x $$ (h,0)))^2)"
-    using sumdef by algebra
-
-  (* From brc_x_equation *)
-  have brc: "(∑i ∈ {0..<𝗏}.(∑h ∈ {0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2) =
-     of_int (int Λ) * (∑j ∈ {0..<𝗏}.(x $$ (j, 0)))^2 +
-     of_int (int (𝗄 - Λ)) * (∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2)"
-    using brc_x_equation by auto
-
-  (* Split on RHS *)
-  have split2: "{0..<𝗏} = {0..<4} ∪ {4..<𝗏}" using m_props by auto
-  have inter2: "{0..<4} ∩ {4..<𝗏} = {}" by auto
-  
-  have x_split: "(∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2) =
-                 (∑j ∈ {0..<4}. (x $$ (j, 0))^2) +
-                 (∑j ∈ {4..<𝗏}. (x $$ (j, 0))^2)"
-  proof -
-    have "finite ({0..<4} :: nat set)" by simp
-    have "finite ({4..<𝗏} :: nat set)" by simp
-    show ?thesis
-      using sum.union_disjoint[OF `finite {0..<4}` `finite {4..<𝗏}` inter2,
-          of "λj. (x $$ (j, 0))^2"]
-      using split2 by simp
-  qed
-
-  (* Key: x $$ (j, 0) for j < 4 corresponds to xj from transformation *)
-  have first_four: "(∑j ∈ {0..<4}. (x $$ (j, 0))^2) = 
-                    x $$ (m-4, 0)^2 + x $$ (m-3, 0)^2 + x $$ (m-2, 0)^2 + x $$ (m-1, 0)^2"
-    sorry (* Need to show indices match up *)
-
-  have "y_of((a, b, c, d),(x0, x1, x2, x3)) = (y0', y1', y2', y3')"
-  proof -
-    have nz: "a^2 + b^2 + c^2 + d^2 ≠ 0"
-      using four_sq blocksize_gt_index by simp
-  
-  (* Extract the tuple from y_inv_of *)
-    have x_tuple: "(x0, x1, x2, x3) = y_inv_of((a, b, c, d),(y0', y1', y2', y3'))"
-      unfolding x0_def x1_def x2_def x3_def by simp
-  
-  (* y_inv_of extracts snd of y_inv_reversible *)
-    have "y_inv_of((a, b, c, d),(y0', y1', y2', y3')) = 
-        snd(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3')))"
-      by simp
-  
-  (* Use y_inverses_part_2 *)
-    have inv2: "y_reversible(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3'))) = 
-              ((a, b, c, d),(y0', y1', y2', y3'))"
-      using y_inverses_part_2[OF nz] by simp
-  
-  (* Take snd of both sides *)
-    have "snd(y_reversible(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3')))) = 
-        snd(((a, b, c, d),(y0', y1', y2', y3')))"
-      using inv2 by simp
-    then have "snd(y_reversible(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3')))) = 
-             (y0', y1', y2', y3')"
-      by simp
-  
-  (* Now connect to y_of *)
-    have "y_of((a, b, c, d), snd(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3')))) =
-        snd(y_reversible((a, b, c, d), snd(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3')))))"
-      by simp
-  
-  (* Use the fact that y_inv_reversible returns a pair *)
-    moreover have "y_reversible((a, b, c, d), snd(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3')))) =
-                 y_reversible(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3')))"
-      by (cases "y_inv_reversible((a, b, c, d),(y0', y1', y2', y3'))") simp
-  
-    ultimately have "y_of((a, b, c, d), snd(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3')))) =
-                   (y0', y1', y2', y3')"
-      using `snd(y_reversible(y_inv_reversible((a, b, c, d),(y0', y1', y2', y3')))) = (y0', y1', y2', y3')`
-      by simp
-  
-    then show ?thesis
-      using x_tuple by simp
-  qed
-
-  have "x0^2 + x1^2 + x2^2 + x3^2 = 
-      (y0'^2 + y1'^2 + y2'^2 + y3'^2) / of_nat(a^2 + b^2 + c^2 + d^2)"
-  proof -
-    have "one_of(y_of((a, b, c, d),(x0, x1, x2, x3)))^2 +
-        two_of(y_of((a, b, c, d),(x0, x1, x2, x3)))^2 +
-        three_of(y_of((a, b, c, d),(x0, x1, x2, x3)))^2 +
-        four_of(y_of((a, b, c, d),(x0, x1, x2, x3)))^2 = 
-        of_nat (a^2 + b^2 + c^2 + d^2) * (x0^2 + x1^2 + x2^2 + x3^2)"
-      using lagrange_trans_of_4_identity by simp
-  
-    then have "(y0'^2 + y1'^2 + y2'^2 + y3'^2) = 
-             of_nat (a^2 + b^2 + c^2 + d^2) * (x0^2 + x1^2 + x2^2 + x3^2)"
-      using `y_of((a, b, c, d),(x0, x1, x2, x3)) = (y0', y1', y2', y3')` by simp
-  
-    moreover have "a^2 + b^2 + c^2 + d^2 ≠ 0"
-      using four_sq blocksize_gt_index by simp
-  
-    then have "of_nat (a^2 + b^2 + c^2 + d^2) ≠ (0::rat)"
-      by linarith
-
-    ultimately show ?thesis by (simp add: field_simps)
-  qed
-
-  then have x_in_terms_of_y: "x $$ (m-4, 0)^2 + x $$ (m-3, 0)^2 + 
-                              x $$ (m-2, 0)^2 + x $$ (m-1, 0)^2 =
-                              (y0'^2 + y1'^2 + y2'^2 + y3'^2) / of_nat(𝗄 - Λ)"
-    using four_sq x_at_m4 x_at_m3 x_at_m2 x_at_m1 by simp
-
-  have eq_for_y0: "(∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) = 
-                 e00 * y0 + e10 * y1' + e20 * y2' + e30 * y3' +
-                 (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-4)) * x $$ (m-h-1,0))"
-  sorry (* This needs to be derived from Li0 and the y-definitions *)
-
-  have eq_for_y1: "(∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) = 
-                 e01 * y0' + e11 * y1 + e21 * y2' + e31 * y3' +
-                 (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-3)) * x $$ (m-h-1,0))"
-  sorry
-
-  have eq_for_y2: "(∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) = 
-                 e02 * y0' + e12 * y1' + e22 * y2 + e32 * y3' +
-                 (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-2)) * x $$ (m-h-1,0))"
-  sorry
-
-  have eq_for_y3: "(∑h ∈ {0..<m}. of_int(N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) = 
-                 e03 * y0' + e13 * y1' + e23 * y2' + e33 * y3 +
-                 (∑h ∈ {4..<m}. of_int(N $$ (m-h-1,m-1)) * x $$ (m-h-1,0))"
-  sorry
-
-(* Now apply induction_step lemmas *)
-  have a_form: "of_nat(a^2 + b^2 + c^2 + d^2) = of_int(𝗄 - Λ)"
-    using four_sq by simp
-
-  have y0_squared: "y0^2 = L0^2"
-    using induction_step_0[OF a_form m_props(2) m_props(1) eq_for_y0 y0_def]
-    unfolding L0_def by simp
-
-  have y1_squared: "y1^2 = L1^2"
-    using induction_step_1[OF a_form m_props(2) m_props(1) eq_for_y1 y1_def]
-    unfolding L1_def by simp
-
-  have y2_squared: "y2^2 = L2^2"
-    using induction_step_2[OF a_form m_props(2) m_props(1) eq_for_y2 y2_def]
-    unfolding L2_def by simp
-
-  have y3_squared: "y3^2 = L3^2"
-    using induction_step_3[OF a_form m_props(2) m_props(1) eq_for_y3 y3_def]
-    unfolding L3_def by simp
-
-(* Therefore *)
-  have sum_y_squared: "y0^2 + y1^2 + y2^2 + y3^2 = L0^2 + L1^2 + L2^2 + L3^2"
-    using y0_squared y1_squared y2_squared y3_squared by simp
-
-(* Now connect everything via brc_x_equation *)
-
-(* Most x entries are 0, only the 4 at m-4, m-3, m-2, m-1 are nonzero *)
-  have x_mostly_zero: "∀j < m. j ∉ {m-4, m-3, m-2, m-1} ⟶ x $$ (j, 0) = 0"
-    using x_def m_props by auto
-
-(* So ∑x only has 4 terms (for j < m; for j ≥ m, x doesn't have those rows) *)
-  have sum_x_simple: "(∑j ∈ {0..<𝗏}. x $$ (j, 0)) = x0 + x1 + x2 + x3"
-  proof -
-    have "(∑j ∈ {0..<𝗏}. x $$ (j, 0)) = (∑j ∈ {0..<m}. x $$ (j, 0)) + (∑j ∈ {m..<𝗏}. x $$ (j, 0))"
-    sorry
-    moreover have "(∑j ∈ {m..<𝗏}. x $$ (j, 0)) = 0"
-    sorry (* x is only m rows, so indices ≥ m give 0 or undefined *)
-    moreover have "(∑j ∈ {0..<m}. x $$ (j, 0)) = x0 + x1 + x2 + x3"
-      using x_mostly_zero x_at_m4 x_at_m3 x_at_m2 x_at_m1 sorry
-    ultimately show ?thesis by simp
-  qed
-
-(* Similarly ∑x² only has 4 terms *)
-  have sum_x_sq_simple: "(∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2) = x0^2 + x1^2 + x2^2 + x3^2"
-    using x_split first_four x_at_m4 x_at_m3 x_at_m2 x_at_m1 sorry
-
-(* Substitute into brc *)
-  have brc_simplified: "(∑i ∈ {0..<𝗏}. (∑h ∈ {0..<𝗏}. of_int(N $$ (h,i)) * x $$ (h,0))^2) =
-                      of_int Λ * (x0 + x1 + x2 + x3)^2 + 
-                      of_int(𝗄 - Λ) * (x0^2 + x1^2 + x2^2 + x3^2)"
-    using brc sum_x_simple sum_x_sq_simple by simp
-
-(* Use x in terms of y' *)
-  have "(x0^2 + x1^2 + x2^2 + x3^2) = (y0'^2 + y1'^2 + y2'^2 + y3'^2) / of_nat(𝗄 - Λ)"
-    using `x0^2 + x1^2 + x2^2 + x3^2 = (y0'^2 + y1'^2 + y2'^2 + y3'^2) / of_nat(a^2 + b^2 + c^2 + d^2)`
-        four_sq by simp
-
-  then have brc_with_y': "(∑i ∈ {0..<𝗏}. (∑h ∈ {0..<𝗏}. of_int(N $$ (h,i)) * x $$ (h,0))^2) =
-                        of_int Λ * (x0 + x1 + x2 + x3)^2 + 
-                        (y0'^2 + y1'^2 + y2'^2 + y3'^2)"
-  proof -
-    have kl_pos: "𝗄 - Λ > 0" using blocksize_gt_index by simp
-    then have kl_nz: "of_nat(𝗄 - Λ) ≠ (0::rat)" by simp
-  
-    have "of_nat(𝗄 - Λ) * (x0^2 + x1^2 + x2^2 + x3^2) = (y0'^2 + y1'^2 + y2'^2 + y3'^2)"
-      using `(x0^2 + x1^2 + x2^2 + x3^2) = (y0'^2 + y1'^2 + y2'^2 + y3'^2) / of_nat(𝗄 - Λ)`
-        kl_nz by (simp add: field_simps)
-  
-    then show ?thesis
-      using brc_simplified by (simp add: field_simps)
-  qed
-
-(* The LHS equals L0² + L1² + L2² + L3² plus remaining terms *)
-(* But we know L0² + L1² + L2² + L3² = y0² + y1² + y2² + y3² *)
-
-(* The key: for some specific choice of y0', y1', y2', y3', the remaining terms vanish or simplify *)
-(* This gives us a Pell equation *)
-
-(* For now, show existence of rational solution *)
-  have "∃s t :: rat. s^2 = of_int Λ * t^2 + of_int(𝗄 - Λ) ∧ (s ≠ 0 ∨ t ≠ 0)"
-  proof -
-  (* Choose specific y' values and use the relation *)
-  (* This is the key algebraic step *)
-  sorry
-  qed
-
-  then obtain s t :: rat where st: "s^2 = of_int Λ * t^2 + of_int(𝗄 - Λ)" 
-    and nontrivial: "s ≠ 0 ∨ t ≠ 0"
-    by blast
-
-(* Convert to integers by clearing denominators *)
-  obtain num_s denom_s num_t denom_t :: int where
-    s_def: "s = of_int num_s / of_int denom_s" and
-    t_def: "t = of_int num_t / of_int denom_t" and
-    denom_pos: "denom_s > 0" "denom_t > 0"
-  sorry (* quotient_of properties *)
-
-  define x_int where "x_int = num_s * denom_t"
-  define z_int where "z_int = denom_s * denom_t"  
-  define y_int where "y_int = num_t * denom_s"
-
-  have "of_int(x_int^2) = of_int(𝗄-Λ) * of_int(y_int^2) + of_int Λ * of_int(z_int^2)"
-  sorry (* Clearing denominators from st *)
-
-  moreover have "x_int ≠ 0 ∨ y_int ≠ 0 ∨ z_int ≠ 0"
-    using nontrivial sorry
-
-  ultimately show ?thesis by blast
-qed*)
 
 end
 end
