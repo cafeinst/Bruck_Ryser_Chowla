@@ -1740,6 +1740,609 @@ proof -
     by simp
 qed
 
+lemma y_of_norm:
+  fixes a b c d :: nat
+  fixes x0 x1 x2 x3 :: rat
+  shows
+   "let y = y_of ((a,b,c,d),(x0,x1,x2,x3)) in
+      one_of y ^ 2 + two_of y ^ 2 + three_of y ^ 2 + four_of y ^ 2
+      =
+      of_nat (a^2 + b^2 + c^2 + d^2) *
+      (x0^2 + x1^2 + x2^2 + x3^2)"
+  by (simp add: algebra_simps power2_eq_square)
+
+lemma y_of_norm_brc:
+  fixes a b c d :: nat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  shows
+   "let y = y_of ((a,b,c,d),(x0,x1,x2,x3)) in
+      one_of y ^ 2 + two_of y ^ 2 + three_of y ^ 2 + four_of y ^ 2
+      =
+      of_nat (𝗄 - Λ) *
+      (x0^2 + x1^2 + x2^2 + x3^2)"
+  using y_of_norm[of a b c d x0 x1 x2 x3] four_sq
+  by simp
+
+lemma brc_four_variable_substitution:
+  fixes a b c d :: nat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  defines "y ≡ y_of ((a,b,c,d),(x0,x1,x2,x3))"
+  shows
+   "of_int (int Λ) * (x0 + x1 + x2 + x3)^2
+    + of_int (int (𝗄 - Λ)) * (x0^2 + x1^2 + x2^2 + x3^2)
+    =
+    of_int (int Λ) * (x0 + x1 + x2 + x3)^2
+    + one_of y^2 + two_of y^2 + three_of y^2 + four_of y^2"
+proof -
+  have norm:
+    "one_of y^2 + two_of y^2 + three_of y^2 + four_of y^2
+     =
+     of_nat (𝗄 - Λ) * (x0^2 + x1^2 + x2^2 + x3^2)"
+    unfolding y_def
+    using y_of_norm_brc[OF four_sq, of x0 x1 x2 x3]
+    by simp
+  show ?thesis
+    using norm by simp
+qed
+
+lemma brc_v_1_mod_4_y_identity:
+  fixes a b c d m :: nat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  defines "y ≡ y_of ((a,b,c,d),(x0,x1,x2,x3))"
+  shows
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) *
+      (mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then x0
+           else if i = m - 3 then x1
+           else if i = m - 2 then x2
+           else if i = m - 1 then x3
+           else 0)
+        else 0)) $$ (h,0))^2)
+    =
+    of_int (int Λ) * (x0 + x1 + x2 + x3)^2
+    + one_of y^2 + two_of y^2 + three_of y^2 + four_of y^2"
+  using brc_v_1_mod_4_identity[OF four_sq m_props]
+        brc_four_variable_substitution[OF four_sq, of x0 x1 x2 x3]
+  unfolding y_def
+  by simp
+
+lemma brc_v_1_mod_4_y_identity_inv:
+  fixes a b c d m :: nat
+  fixes y0 y1 y2 y3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  defines "xs ≡ y_inv_of ((a,b,c,d),(y0,y1,y2,y3))"
+  shows
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) *
+      (mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then one_of xs
+           else if i = m - 3 then two_of xs
+           else if i = m - 2 then three_of xs
+           else if i = m - 1 then four_of xs
+           else 0)
+        else 0)) $$ (h,0))^2)
+    =
+    of_int (int Λ) *
+      (one_of xs + two_of xs + three_of xs + four_of xs)^2
+    + y0^2 + y1^2 + y2^2 + y3^2"
+proof -
+  have nz: "a^2 + b^2 + c^2 + d^2 ≠ 0"
+    using four_sq blocksize_gt_index by simp
+
+  have yback:
+    "y_of ((a,b,c,d), xs) = (y0,y1,y2,y3)"
+    unfolding xs_def
+    using y_inverses_part_2[OF nz, of y0 y1 y2 y3]
+    by simp
+
+  have norm:
+    "of_nat (𝗄 - Λ) *
+      (one_of xs^2 + two_of xs^2 + three_of xs^2 + four_of xs^2)
+     =
+     y0^2 + y1^2 + y2^2 + y3^2"
+  proof -
+    have norm0:
+      "let y = y_of ((a,b,c,d),
+          (one_of xs, two_of xs, three_of xs, four_of xs)) in
+        one_of y ^ 2 + two_of y ^ 2 + three_of y ^ 2 + four_of y ^ 2
+        =
+        of_nat (𝗄 - Λ) *
+        (one_of xs^2 + two_of xs^2 + three_of xs^2 + four_of xs^2)"
+      using y_of_norm_brc[OF four_sq,
+        of "one_of xs" "two_of xs" "three_of xs" "four_of xs"]
+      by simp
+
+    have tuple_xs:
+      "(one_of xs, two_of xs, three_of xs, four_of xs) = xs"
+      by (cases xs) simp
+
+    have norm1:
+      "one_of (y_of ((a,b,c,d), xs))^2
+      + two_of (y_of ((a,b,c,d), xs))^2
+      + three_of (y_of ((a,b,c,d), xs))^2
+      + four_of (y_of ((a,b,c,d), xs))^2
+      =
+      of_nat (𝗄 - Λ) *
+        (one_of xs^2 + two_of xs^2 + three_of xs^2 + four_of xs^2)"
+      using norm0 tuple_xs
+      by (simp add: Let_def)
+
+    have "of_nat (𝗄 - Λ) *
+        (one_of xs^2 + two_of xs^2 + three_of xs^2 + four_of xs^2)
+      =
+      one_of (y_of ((a,b,c,d), xs))^2
+      + two_of (y_of ((a,b,c,d), xs))^2
+      + three_of (y_of ((a,b,c,d), xs))^2
+      + four_of (y_of ((a,b,c,d), xs))^2"
+      using norm1 by simp
+
+    also have "... = y0^2 + y1^2 + y2^2 + y3^2"
+      using yback by simp
+
+    finally show ?thesis .
+  qed
+
+  have base:
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) *
+      (mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then one_of xs
+           else if i = m - 3 then two_of xs
+           else if i = m - 2 then three_of xs
+           else if i = m - 1 then four_of xs
+           else 0)
+        else 0)) $$ (h,0))^2)
+    =
+    of_int (int Λ) *
+      (one_of xs + two_of xs + three_of xs + four_of xs)^2
+    + of_int (int (𝗄 - Λ)) *
+      (one_of xs^2 + two_of xs^2 + three_of xs^2 + four_of xs^2)"
+    using brc_v_1_mod_4_identity[
+      OF four_sq m_props,
+      of "one_of xs" "two_of xs" "three_of xs" "four_of xs"]
+    by simp
+
+  show ?thesis
+    using base norm by simp
+qed
+
+lemma brc_last_four_Li_linear_combinations:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0' y1' y2' y3' :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0',y1',y2',y3')))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0',y1',y2',y3')))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0',y1',y2',y3')))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0',y1',y2',y3')))"
+  shows
+   "∃c00 c10 c20 c30 c01 c11 c21 c31 c02 c12 c22 c32 c03 c13 c23 c33.
+      (∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        c00*y0' + c10*y1' + c20*y2' + c30*y3' +
+        (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        c01*y0' + c11*y1' + c21*y2' + c31*y3' +
+        (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        c02*y0' + c12*y1' + c22*y2' + c32*y3' +
+        (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        c03*y0' + c13*y1' + c23*y2' + c33*y3' +
+        (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+proof -
+  have i0_in: "(0::nat) ∈ {0..<4}" by simp
+  have i1_in: "(1::nat) ∈ {0..<4}" by simp
+  have i2_in: "(2::nat) ∈ {0..<4}" by simp
+  have i3_in: "(3::nat) ∈ {0..<4}" by simp
+
+  obtain c00 c10 c20 c30 where Li_m4:
+    "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+    c00*y0' + c10*y1' + c20*y2' + c30*y3' +
+    (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))"
+  proof -
+    obtain e0 e1 e2 e3 where e:
+      "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 3 - 1)) * x $$ (m - h - 1, 0)) =
+      e0 * y0' + e1 * y1' + e2 * y2' + e3 * y3' +
+      (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 3 - 1)) * x $$ (m - h - 1, 0))"
+      using linear_comb_of_y_part_2[
+          OF four_sq m_v m_gt3 i3_in
+          x0_def x1_def x2_def x3_def
+          x0_eq x1_eq x2_eq x3_eq]
+      by blast
+
+    have simp_col: "m - 3 - 1 = m - 4"
+      using m_gt3 by simp
+
+    show ?thesis
+      using e simp_col that by simp
+  qed
+
+  obtain c01 c11 c21 c31 where Li_m3:
+    "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+    c01*y0' + c11*y1' + c21*y2' + c31*y3' +
+    (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))"
+  proof -
+    obtain e0 e1 e2 e3 where e:
+      "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 2 - 1)) * x $$ (m - h - 1, 0)) =
+      e0 * y0' + e1 * y1' + e2 * y2' + e3 * y3' +
+      (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 2 - 1)) * x $$ (m - h - 1, 0))"
+      using linear_comb_of_y_part_2[
+          OF four_sq m_v m_gt3 i2_in
+         x0_def x1_def x2_def x3_def
+         x0_eq x1_eq x2_eq x3_eq]
+      by blast
+
+    have simp_col: "m - 2 - 1 = m - 3"
+      using m_gt3 by simp
+
+    show ?thesis
+      using e simp_col that by simp
+  qed
+
+  obtain c02 c12 c22 c32 where Li_m2:
+    "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+    c02*y0' + c12*y1' + c22*y2' + c32*y3' +
+    (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))"
+  proof -
+    obtain e0 e1 e2 e3 where e:
+      "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 1 - 1)) * x $$ (m - h - 1, 0)) =
+      e0 * y0' + e1 * y1' + e2 * y2' + e3 * y3' +
+      (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 1 - 1)) * x $$ (m - h - 1, 0))"
+      using linear_comb_of_y_part_2[
+          OF four_sq m_v m_gt3 i1_in
+         x0_def x1_def x2_def x3_def
+         x0_eq x1_eq x2_eq x3_eq]
+      by blast
+
+    have simp_col: "m - 1 - 1 = m - 2"
+      using m_gt3 by simp
+
+    show ?thesis
+      using e simp_col that by simp
+  qed
+
+  obtain c03 c13 c23 c33 where Li_m1:
+    "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+    c03*y0' + c13*y1' + c23*y2' + c33*y3' +
+    (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+  proof -
+    obtain e0 e1 e2 e3 where e:
+      "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 0 - 1)) * x $$ (m - h - 1, 0)) =
+      e0 * y0' + e1 * y1' + e2 * y2' + e3 * y3' +
+     (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 0 - 1)) * x $$ (m - h - 1, 0))"
+      using linear_comb_of_y_part_2[
+          OF four_sq m_v m_gt3 i0_in
+          x0_def x1_def x2_def x3_def
+          x0_eq x1_eq x2_eq x3_eq]
+      by blast
+
+    have simp_col: "m - 0 - 1 = m - 1"
+      using m_gt3 by simp
+
+    show ?thesis
+      using e simp_col that by simp
+  qed
+
+  show ?thesis
+    using Li_m4 Li_m3 Li_m2 Li_m1 by blast
+qed
+
+lemma brc_last_four_Ls_linear_combinations:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0' y1' y2' y3' :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0',y1',y2',y3')))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0',y1',y2',y3')))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0',y1',y2',y3')))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0',y1',y2',y3')))"
+  defines "L0 ≡
+      (∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))
+    + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 4)) * x $$ (h, 0))"
+  defines "L1 ≡
+      (∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))
+    + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 3)) * x $$ (h, 0))"
+  defines "L2 ≡
+      (∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))
+    + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 2)) * x $$ (h, 0))"
+  defines "L3 ≡
+      (∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))
+    + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 1)) * x $$ (h, 0))"
+  shows
+   "∃c00 c10 c20 c30 c01 c11 c21 c31 c02 c12 c22 c32 c03 c13 c23 c33.
+      L0 =
+        c00*y0' + c10*y1' + c20*y2' + c30*y3'
+        + (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))
+        + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 4)) * x $$ (h, 0))
+    ∧ L1 =
+        c01*y0' + c11*y1' + c21*y2' + c31*y3'
+        + (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))
+        + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 3)) * x $$ (h, 0))
+    ∧ L2 =
+        c02*y0' + c12*y1' + c22*y2' + c32*y3'
+        + (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))
+        + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 2)) * x $$ (h, 0))
+    ∧ L3 =
+        c03*y0' + c13*y1' + c23*y2' + c33*y3'
+        + (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))
+        + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 1)) * x $$ (h, 0))"
+proof -
+  obtain c00 c10 c20 c30 c01 c11 c21 c31 c02 c12 c22 c32 c03 c13 c23 c33
+    where coeffs:
+      "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        c00*y0' + c10*y1' + c20*y2' + c30*y3' +
+        (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))"
+      "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        c01*y0' + c11*y1' + c21*y2' + c31*y3' +
+        (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))"
+      "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        c02*y0' + c12*y1' + c22*y2' + c32*y3' +
+        (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))"
+      "(∑h = 0..<m. rat_of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        c03*y0' + c13*y1' + c23*y2' + c33*y3' +
+        (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+    using brc_last_four_Li_linear_combinations[
+      OF four_sq m_v m_gt3
+         x0_def x1_def x2_def x3_def
+         x0_eq x1_eq x2_eq x3_eq]
+    by blast
+
+  show ?thesis
+  proof (intro exI conjI)
+    show "L0 =
+        c00*y0' + c10*y1' + c20*y2' + c30*y3'
+        + (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))
+        + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 4)) * x $$ (h, 0))"
+      unfolding L0_def
+      using coeffs(1)
+      by simp
+
+    show "L1 =
+        c01*y0' + c11*y1' + c21*y2' + c31*y3'
+        + (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))
+        + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 3)) * x $$ (h, 0))"
+      unfolding L1_def
+      using coeffs(2)
+      by simp
+
+    show "L2 =
+        c02*y0' + c12*y1' + c22*y2' + c32*y3'
+        + (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))
+        + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 2)) * x $$ (h, 0))"
+      unfolding L2_def
+      using coeffs(3)
+      by simp
+
+    show "L3 =
+        c03*y0' + c13*y1' + c23*y2' + c33*y3'
+        + (∑h = 4..<m. rat_of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))
+        + (∑h = m..<𝗏. rat_of_int (N $$ (h, m - 1)) * x $$ (h, 0))"
+      unfolding L3_def
+      using coeffs(4)
+      by simp
+  qed
+qed
+
+lemma brc_L0_from_last_four:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0 y1 y2 y3 :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+    "∃c00 c10 c20 c30.
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        c00*y0 + c10*y1 + c20*y2 + c30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))"
+proof -
+  have i3_in: "(3::nat) ∈ {0..<4}" by simp
+
+  obtain c00 c10 c20 c30 where coeff:
+    "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+      c00*y0 + c10*y1 + c20*y2 + c30*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))"
+  proof -
+    obtain e0 e1 e2 e3 where e:
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3 - 1)) * x $$ (m - h - 1, 0)) =
+       e0*y0 + e1*y1 + e2*y2 + e3*y3 +
+       (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3 - 1)) * x $$ (m - h - 1, 0))"
+      using linear_comb_of_y_part_2[
+        OF four_sq m_v m_gt3 i3_in
+           x0_def x1_def x2_def x3_def
+           x0_eq x1_eq x2_eq x3_eq]
+      by blast
+
+    have simp_col: "m - 3 - 1 = m - 4"
+      using m_gt3 by simp
+
+    show ?thesis
+      using e simp_col that by simp
+  qed
+
+  show ?thesis
+    using coeff by blast
+qed
+
+lemma brc_L1_from_last_four:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0 y1 y2 y3 :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+    "∃c01 c11 c21 c31.
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        c01*y0 + c11*y1 + c21*y2 + c31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))"
+proof -
+  have i2_in: "(2::nat) ∈ {0..<4}" by simp
+
+  obtain c01 c11 c21 c31 where coeff:
+    "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+      c01*y0 + c11*y1 + c21*y2 + c31*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))"
+  proof -
+    obtain e0 e1 e2 e3 where e:
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2 - 1)) * x $$ (m - h - 1, 0)) =
+       e0*y0 + e1*y1 + e2*y2 + e3*y3 +
+       (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2 - 1)) * x $$ (m - h - 1, 0))"
+      using linear_comb_of_y_part_2[
+        OF four_sq m_v m_gt3 i2_in
+           x0_def x1_def x2_def x3_def
+           x0_eq x1_eq x2_eq x3_eq]
+      by blast
+
+    have simp_col: "m - 2 - 1 = m - 3"
+      using m_gt3 by simp
+
+    show ?thesis
+      using e simp_col that by simp
+  qed
+
+  show ?thesis
+    using coeff by blast
+qed
+
+lemma brc_L2_from_last_four:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0 y1 y2 y3 :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+    "∃c02 c12 c22 c32.
+    (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+      c02*y0 + c12*y1 + c22*y2 + c32*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))"
+proof -
+  have i1_in: "(1::nat) ∈ {0..<4}" by simp
+
+  obtain c02 c12 c22 c32 where coeff:
+    "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+      c02*y0 + c12*y1 + c22*y2 + c32*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))"
+  proof -
+    obtain e0 e1 e2 e3 where e:
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1 - 1)) * x $$ (m - h - 1, 0)) =
+       e0*y0 + e1*y1 + e2*y2 + e3*y3 +
+       (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1 - 1)) * x $$ (m - h - 1, 0))"
+      using linear_comb_of_y_part_2[
+        OF four_sq m_v m_gt3 i1_in
+           x0_def x1_def x2_def x3_def
+           x0_eq x1_eq x2_eq x3_eq]
+      by blast
+
+    have simp_col: "m - 1 - 1 = m - 2"
+      using m_gt3 by simp
+
+    show ?thesis
+      using e simp_col that by simp
+  qed
+
+  show ?thesis
+    using coeff by blast
+qed
+
+lemma brc_L3_from_last_four:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0 y1 y2 y3 :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+shows
+  "∃c03 c13 c23 c33.
+    (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+      c03*y0 + c13*y1 + c23*y2 + c33*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+proof -
+  have i0_in: "(0::nat) ∈ {0..<4}" by simp
+
+  obtain c03 c13 c23 c33 where coeff:
+    "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+      c03*y0 + c13*y1 + c23*y2 + c33*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+  proof -
+    obtain e0 e1 e2 e3 where e:
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 0 - 1)) * x $$ (m - h - 1, 0)) =
+       e0*y0 + e1*y1 + e2*y2 + e3*y3 +
+       (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 0 - 1)) * x $$ (m - h - 1, 0))"
+      using linear_comb_of_y_part_2[
+        OF four_sq m_v m_gt3 i0_in
+           x0_def x1_def x2_def x3_def
+           x0_eq x1_eq x2_eq x3_eq]
+      by blast
+
+    have simp_col: "m - 0 - 1 = m - 1"
+      using m_gt3 by simp
+
+    show ?thesis
+      using e simp_col that by simp
+  qed
+
+  show ?thesis
+    using coeff by blast
+qed
+
 (*lemma brc_v_1_mod_4:
   fixes a b c d m :: nat
   assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
