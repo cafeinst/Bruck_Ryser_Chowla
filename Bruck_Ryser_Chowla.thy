@@ -1558,6 +1558,342 @@ proof -
   thus ?thesis by simp
 qed
 
+lemma induction_step_0_explicit:
+  fixes e00 e10 e20 e30 :: rat
+  fixes y0 y1 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  assumes L0:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) =
+      e00 * y0 + e10 * y1 + e20 * y2 + e30 * y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0))"
+  assumes y0_choice:
+    "y0 =
+      (if e00 = 1 then
+        - (e10 * y1 + e20 * y2 + e30 * y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / 2
+       else
+        (e10 * y1 + e20 * y2 + e30 * y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / (1 - e00))"
+  shows
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2"
+proof -
+  let ?A =
+    "e10 * y1 + e20 * y2 + e30 * y3 +
+     (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+     (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))"
+
+  have Ltotal:
+    "((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))
+     = e00 * y0 + ?A"
+    using L0 by (simp add: algebra_simps)
+
+  show ?thesis
+  proof (cases "e00 = 1")
+    case True
+    then have y0_eq: "y0 = - ?A / 2"
+      using y0_choice by simp
+
+    have total_eq: "e00 * y0 + ?A = - y0"
+      using True y0_eq
+      by (simp add: field_simps)
+
+    have "((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))
+      = - y0"
+      using Ltotal total_eq by simp
+
+    then show ?thesis
+      by simp
+  next
+    case False
+    then have y0_eq: "y0 = ?A / (1 - e00)"
+      using y0_choice by simp
+    then have "e00 * y0 + ?A = y0"
+      using False
+      by (simp add: field_simps)
+    then show ?thesis
+      using Ltotal by simp
+  qed
+qed
+
+lemma induction_step_1_explicit:
+  fixes e01 e11 e21 e31 :: rat
+  fixes y0 y1 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  assumes L1:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) =
+      e01 * y0 + e11 * y1 + e21 * y2 + e31 * y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0))"
+  assumes y1_choice:
+    "y1 =
+      (if e11 = 1 then
+        - (e01 * y0 + e21 * y2 + e31 * y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / 2
+       else
+        (e01 * y0 + e21 * y2 + e31 * y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / (1 - e11))"
+  shows
+    "y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2"
+proof -
+  let ?A =
+    "e01 * y0 + e21 * y2 + e31 * y3 +
+     (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+     (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))"
+
+  have Ltotal:
+    "((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))
+     = e11 * y1 + ?A"
+    using L1 by (simp add: algebra_simps)
+
+  show ?thesis
+  proof (cases "e11 = 1")
+    case True
+    then have y1_eq: "y1 = - ?A / 2"
+      using y1_choice by simp
+
+    have total_eq: "e11 * y1 + ?A = - y1"
+      using True y1_eq
+      by (simp add: field_simps)
+
+    have "((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))
+      = - y1"
+      using Ltotal total_eq by simp
+
+    then show ?thesis
+      by simp
+  next
+    case False
+    then have y1_eq: "y1 = ?A / (1 - e11)"
+      using y1_choice by simp
+    then have "e11 * y1 + ?A = y1"
+      using False
+      by (simp add: field_simps)
+    then show ?thesis
+      using Ltotal by simp
+  qed
+qed
+
+lemma induction_step_2_explicit:
+  fixes e02 e12 e22 e32 :: rat
+  fixes y0 y1 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  assumes L2:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) =
+      e02 * y0 + e12 * y1 + e22 * y2 + e32 * y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0))"
+  assumes y2_choice:
+    "y2 =
+      (if e22 = 1 then
+        - (e02 * y0 + e12 * y1 + e32 * y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / 2
+       else
+        (e02 * y0 + e12 * y1 + e32 * y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / (1 - e22))"
+  shows
+    "y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2"
+proof -
+  let ?A =
+    "e02 * y0 + e12 * y1 + e32 * y3 +
+     (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+     (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))"
+
+  have Ltotal:
+    "((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))
+     = e22 * y2 + ?A"
+    using L2 by (simp add: algebra_simps)
+
+  show ?thesis
+  proof (cases "e22 = 1")
+    case True
+    then have y2_eq: "y2 = - ?A / 2"
+      using y2_choice by simp
+
+    have total_eq: "e22 * y2 + ?A = - y2"
+      using True y2_eq
+      by (simp add: field_simps)
+
+    have "((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))
+      = - y2"
+      using Ltotal total_eq by simp
+
+    then show ?thesis
+      by simp
+  next
+    case False
+    then have y2_eq: "y2 = ?A / (1 - e22)"
+      using y2_choice by simp
+    then have "e22 * y2 + ?A = y2"
+      using False
+      by (simp add: field_simps)
+    then show ?thesis
+      using Ltotal by simp
+  qed
+qed
+
+lemma induction_step_3_explicit:
+  fixes e03 e13 e23 e33 :: rat
+  fixes y0 y1 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  assumes L3:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) =
+      e03 * y0 + e13 * y1 + e23 * y2 + e33 * y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0))"
+  assumes y3_choice:
+    "y3 =
+      (if e33 = 1 then
+        - (e03 * y0 + e13 * y1 + e23 * y2 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / 2
+       else
+        (e03 * y0 + e13 * y1 + e23 * y2 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / (1 - e33))"
+  shows
+    "y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+proof -
+  let ?A =
+    "e03 * y0 + e13 * y1 + e23 * y2 +
+     (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+     (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))"
+
+  have Ltotal:
+    "((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))
+     = e33 * y3 + ?A"
+    using L3 by (simp add: algebra_simps)
+
+  show ?thesis
+  proof (cases "e33 = 1")
+    case True
+    then have y3_eq: "y3 = - ?A / 2"
+      using y3_choice by simp
+
+    have total_eq: "e33 * y3 + ?A = - y3"
+      using True y3_eq
+      by (simp add: field_simps)
+
+    have "((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))
+      = - y3"
+      using Ltotal total_eq by simp
+
+    then show ?thesis
+      by simp
+  next
+    case False
+    then have y3_eq: "y3 = ?A / (1 - e33)"
+      using y3_choice by simp
+    then have "e33 * y3 + ?A = y3"
+      using False
+      by (simp add: field_simps)
+    then show ?thesis
+      using Ltotal by simp
+  qed
+qed
+
+lemma induction_step_0123_explicit:
+  fixes e00 e10 e20 e30 e01 e11 e21 e31 e02 e12 e22 e32 e03 e13 e23 e33 :: rat
+  fixes y0 y1 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  assumes L0:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) =
+      e00*y0 + e10*y1 + e20*y2 + e30*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0))"
+  assumes L1:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) =
+      e01*y0 + e11*y1 + e21*y2 + e31*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0))"
+  assumes L2:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) =
+      e02*y0 + e12*y1 + e22*y2 + e32*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0))"
+  assumes L3:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) =
+      e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0))"
+  assumes y0_choice:
+    "y0 =
+      (if e00 = 1 then
+        - (e10*y1 + e20*y2 + e30*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / 2
+       else
+        (e10*y1 + e20*y2 + e30*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / (1 - e00))"
+  assumes y1_choice:
+    "y1 =
+      (if e11 = 1 then
+        - (e01*y0 + e21*y2 + e31*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / 2
+       else
+        (e01*y0 + e21*y2 + e31*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / (1 - e11))"
+  assumes y2_choice:
+    "y2 =
+      (if e22 = 1 then
+        - (e02*y0 + e12*y1 + e32*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / 2
+       else
+        (e02*y0 + e12*y1 + e32*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / (1 - e22))"
+  assumes y3_choice:
+    "y3 =
+      (if e33 = 1 then
+        - (e03*y0 + e13*y1 + e23*y2 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / 2
+       else
+        (e03*y0 + e13*y1 + e23*y2 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / (1 - e33))"
+  shows
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2
+    ∧ y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2
+    ∧ y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2
+    ∧ y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+  using induction_step_0_explicit[OF L0 y0_choice]
+        induction_step_1_explicit[OF L1 y1_choice]
+        induction_step_2_explicit[OF L2 y2_choice]
+        induction_step_3_explicit[OF L3 y3_choice]
+  by blast
+
 lemma brc_v_eq_1:
   assumes v_eq_1: "𝗏 = 1"
   assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
@@ -2341,6 +2677,1389 @@ proof -
 
   show ?thesis
     using coeff by blast
+qed
+
+lemma brc_L0123_from_last_four:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0 y1 y2 y3 :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+   "∃c00 c10 c20 c30 c01 c11 c21 c31 c02 c12 c22 c32 c03 c13 c23 c33.
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        c00*y0 + c10*y1 + c20*y2 + c30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        c01*y0 + c11*y1 + c21*y2 + c31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        c02*y0 + c12*y1 + c22*y2 + c32*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        c03*y0 + c13*y1 + c23*y2 + c33*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+proof -
+  obtain c00 c10 c20 c30 where L0:
+    "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+      c00*y0 + c10*y1 + c20*y2 + c30*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))"
+    using brc_L0_from_last_four[
+      OF four_sq m_v m_gt3 x0_def x1_def x2_def x3_def
+         x0_eq x1_eq x2_eq x3_eq]
+    by blast
+
+  obtain c01 c11 c21 c31 where L1:
+    "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+      c01*y0 + c11*y1 + c21*y2 + c31*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))"
+    using brc_L1_from_last_four[
+      OF four_sq m_v m_gt3 x0_def x1_def x2_def x3_def
+         x0_eq x1_eq x2_eq x3_eq]
+    by blast
+
+  obtain c02 c12 c22 c32 where L2:
+    "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+      c02*y0 + c12*y1 + c22*y2 + c32*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))"
+    using brc_L2_from_last_four[
+      OF four_sq m_v m_gt3 x0_def x1_def x2_def x3_def
+         x0_eq x1_eq x2_eq x3_eq]
+    by blast
+
+  obtain c03 c13 c23 c33 where L3:
+    "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+      c03*y0 + c13*y1 + c23*y2 + c33*y3 +
+      (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+    using brc_L3_from_last_four[
+      OF four_sq m_v m_gt3 x0_def x1_def x2_def x3_def
+         x0_eq x1_eq x2_eq x3_eq]
+    by blast
+
+  show ?thesis
+    using L0 L1 L2 L3 by blast
+qed
+
+lemma brc_last_four_square_if_choices:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0 y1 y2 y3 :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes choices:
+    "⋀e00 e10 e20 e30 e01 e11 e21 e31 e02 e12 e22 e32 e03 e13 e23 e33.
+      ⟦
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        e00*y0 + e10*y1 + e20*y2 + e30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0));
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        e01*y0 + e11*y1 + e21*y2 + e31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0));
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        e02*y0 + e12*y1 + e22*y2 + e32*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0));
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))
+      ⟧ ⟹
+      y0 =
+        (if e00 = 1 then
+          - (e10*y1 + e20*y2 + e30*y3 +
+             (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+             (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / 2
+         else
+          (e10*y1 + e20*y2 + e30*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / (1 - e00))
+      ∧ y1 =
+        (if e11 = 1 then
+          - (e01*y0 + e21*y2 + e31*y3 +
+             (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+             (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / 2
+         else
+          (e01*y0 + e21*y2 + e31*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / (1 - e11))
+      ∧ y2 =
+        (if e22 = 1 then
+          - (e02*y0 + e12*y1 + e32*y3 +
+             (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+             (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / 2
+         else
+          (e02*y0 + e12*y1 + e32*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / (1 - e22))
+      ∧ y3 =
+        (if e33 = 1 then
+          - (e03*y0 + e13*y1 + e23*y2 +
+             (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+             (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / 2
+         else
+          (e03*y0 + e13*y1 + e23*y2 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / (1 - e33))"
+  shows
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+      (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2
+    ∧ y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+      (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2
+    ∧ y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+      (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2
+    ∧ y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+      (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+proof -
+  obtain e00 e10 e20 e30 e01 e11 e21 e31 e02 e12 e22 e32 e03 e13 e23 e33
+    where Ls:
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        e00*y0 + e10*y1 + e20*y2 + e30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))"
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        e01*y0 + e11*y1 + e21*y2 + e31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))"
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        e02*y0 + e12*y1 + e22*y2 + e32*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))"
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+    using brc_L0123_from_last_four[
+      OF four_sq m_v m_gt3
+         x0_def x1_def x2_def x3_def
+         x0_eq x1_eq x2_eq x3_eq]
+    by blast
+
+  have ch_all:
+    "y0 =
+      (if e00 = 1 then
+        - (e10*y1 + e20*y2 + e30*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / 2
+       else
+        (e10*y1 + e20*y2 + e30*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / (1 - e00))
+    ∧ y1 =
+      (if e11 = 1 then
+        - (e01*y0 + e21*y2 + e31*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / 2
+       else
+        (e01*y0 + e21*y2 + e31*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / (1 - e11))
+    ∧ y2 =
+      (if e22 = 1 then
+        - (e02*y0 + e12*y1 + e32*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / 2
+       else
+        (e02*y0 + e12*y1 + e32*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / (1 - e22))
+    ∧ y3 =
+      (if e33 = 1 then
+        - (e03*y0 + e13*y1 + e23*y2 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / 2
+       else
+        (e03*y0 + e13*y1 + e23*y2 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / (1 - e33))"
+    using choices[OF Ls] .
+
+  have ch0: "y0 =
+      (if e00 = 1 then
+        - (e10*y1 + e20*y2 + e30*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / 2
+       else
+        (e10*y1 + e20*y2 + e30*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / (1 - e00))"
+    using ch_all by blast
+
+  have ch1: "y1 =
+      (if e11 = 1 then
+        - (e01*y0 + e21*y2 + e31*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / 2
+       else
+        (e01*y0 + e21*y2 + e31*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / (1 - e11))"
+    using ch_all by blast
+
+  have ch2: "y2 =
+      (if e22 = 1 then
+        - (e02*y0 + e12*y1 + e32*y3 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / 2
+       else
+        (e02*y0 + e12*y1 + e32*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / (1 - e22))"
+    using ch_all by blast
+
+  have ch3: "y3 =
+      (if e33 = 1 then
+        - (e03*y0 + e13*y1 + e23*y2 +
+           (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+           (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / 2
+       else
+        (e03*y0 + e13*y1 + e23*y2 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / (1 - e33))"
+    using ch_all by blast
+
+  show ?thesis
+    using induction_step_0123_explicit[
+      OF Ls(1) Ls(2) Ls(3) Ls(4) ch0 ch1 ch2 ch3]
+    .
+qed
+
+definition brc_choice0 where
+  "brc_choice0 e00 e10 e20 e30 y1 y2 y3 x m =
+    (if e00 = 1 then
+      - (e10*y1 + e20*y2 + e30*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / 2
+     else
+      (e10*y1 + e20*y2 + e30*y3 +
+       (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))) / (1 - e00))"
+
+definition brc_choice1 where
+  "brc_choice1 e01 e11 e21 e31 y0 y2 y3 x m =
+    (if e11 = 1 then
+      - (e01*y0 + e21*y2 + e31*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / 2
+     else
+      (e01*y0 + e21*y2 + e31*y3 +
+       (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))) / (1 - e11))"
+
+definition brc_choice2 where
+  "brc_choice2 e02 e12 e22 e32 y0 y1 y3 x m =
+    (if e22 = 1 then
+      - (e02*y0 + e12*y1 + e32*y3 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / 2
+     else
+      (e02*y0 + e12*y1 + e32*y3 +
+       (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))) / (1 - e22))"
+
+definition brc_choice3 where
+  "brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m =
+    (if e33 = 1 then
+      - (e03*y0 + e13*y1 + e23*y2 +
+         (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+         (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / 2
+     else
+      (e03*y0 + e13*y1 + e23*y2 +
+       (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))) / (1 - e33))"
+
+lemma induction_step_0123_choices:
+  fixes e00 e10 e20 e30 e01 e11 e21 e31 e02 e12 e22 e32 e03 e13 e23 e33 :: rat
+  fixes y0 y1 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  assumes L0:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) =
+      e00*y0 + e10*y1 + e20*y2 + e30*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0))"
+  assumes L1:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) =
+      e01*y0 + e11*y1 + e21*y2 + e31*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0))"
+  assumes L2:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) =
+      e02*y0 + e12*y1 + e22*y2 + e32*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0))"
+  assumes L3:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) =
+      e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0))"
+  assumes ch0: "y0 = brc_choice0 e00 e10 e20 e30 y1 y2 y3 x m"
+  assumes ch1: "y1 = brc_choice1 e01 e11 e21 e31 y0 y2 y3 x m"
+  assumes ch2: "y2 = brc_choice2 e02 e12 e22 e32 y0 y1 y3 x m"
+  assumes ch3: "y3 = brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m"
+  shows
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2
+    ∧ y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2
+    ∧ y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2
+    ∧ y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+  using induction_step_0123_explicit[
+    OF L0 L1 L2 L3]
+  using ch0 ch1 ch2 ch3
+  unfolding brc_choice0_def brc_choice1_def brc_choice2_def brc_choice3_def
+  by blast
+
+lemma brc_last_four_square_if_choices_short:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0 y1 y2 y3 :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes choices:
+    "⋀e00 e10 e20 e30 e01 e11 e21 e31 e02 e12 e22 e32 e03 e13 e23 e33.
+      ⟦
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        e00*y0 + e10*y1 + e20*y2 + e30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0));
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        e01*y0 + e11*y1 + e21*y2 + e31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0));
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        e02*y0 + e12*y1 + e22*y2 + e32*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0));
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))
+      ⟧ ⟹
+      y0 = brc_choice0 e00 e10 e20 e30 y1 y2 y3 x m
+    ∧ y1 = brc_choice1 e01 e11 e21 e31 y0 y2 y3 x m
+    ∧ y2 = brc_choice2 e02 e12 e22 e32 y0 y1 y3 x m
+    ∧ y3 = brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m"
+  shows
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2
+    ∧ y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2
+    ∧ y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2
+    ∧ y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+proof -
+  obtain e00 e10 e20 e30 e01 e11 e21 e31 e02 e12 e22 e32 e03 e13 e23 e33
+    where Ls:
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        e00*y0 + e10*y1 + e20*y2 + e30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))"
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        e01*y0 + e11*y1 + e21*y2 + e31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))"
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        e02*y0 + e12*y1 + e22*y2 + e32*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))"
+      "(∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+    using brc_L0123_from_last_four[
+      OF four_sq m_v m_gt3
+         x0_def x1_def x2_def x3_def
+         x0_eq x1_eq x2_eq x3_eq]
+    by blast
+
+  have ch_all:
+    "y0 = brc_choice0 e00 e10 e20 e30 y1 y2 y3 x m
+   ∧ y1 = brc_choice1 e01 e11 e21 e31 y0 y2 y3 x m
+   ∧ y2 = brc_choice2 e02 e12 e22 e32 y0 y1 y3 x m
+   ∧ y3 = brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m"
+    using choices[OF Ls] .
+
+  show ?thesis
+    using induction_step_0123_choices[
+      OF Ls(1) Ls(2) Ls(3) Ls(4)]
+    using ch_all
+    by blast
+qed
+
+lemma brc_choice0_exists:
+  fixes e00 e10 e20 e30 y1 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  shows "∃y0. y0 = brc_choice0 e00 e10 e20 e30 y1 y2 y3 x m"
+  by blast
+
+lemma brc_choice1_exists:
+  fixes e01 e11 e21 e31 y0 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  shows "∃y1. y1 = brc_choice1 e01 e11 e21 e31 y0 y2 y3 x m"
+  by blast
+
+lemma brc_choice2_exists:
+  fixes e02 e12 e22 e32 y0 y1 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  shows "∃y2. y2 = brc_choice2 e02 e12 e22 e32 y0 y1 y3 x m"
+  by blast
+
+lemma brc_choice3_exists:
+  fixes e03 e13 e23 e33 y0 y1 y2 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  shows "∃y3. y3 = brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m"
+  by blast
+
+lemma brc_choice0_square:
+  fixes e00 e10 e20 e30 y1 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  defines "y0 ≡ brc_choice0 e00 e10 e20 e30 y1 y2 y3 x m"
+  assumes L0:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) =
+      e00*y0 + e10*y1 + e20*y2 + e30*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0))"
+  shows
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2"
+  using induction_step_0_explicit[OF L0]
+  unfolding y0_def brc_choice0_def
+  by simp
+
+lemma brc_choice1_square:
+  fixes e01 e11 e21 e31 y0 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  defines "y1 ≡ brc_choice1 e01 e11 e21 e31 y0 y2 y3 x m"
+  assumes L1:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) =
+      e01*y0 + e11*y1 + e21*y2 + e31*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0))"
+  shows
+    "y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2"
+  using induction_step_1_explicit[OF L1]
+  unfolding y1_def brc_choice1_def
+  by simp
+
+lemma brc_choice2_square:
+  fixes e02 e12 e22 e32 y0 y1 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  defines "y2 ≡ brc_choice2 e02 e12 e22 e32 y0 y1 y3 x m"
+  assumes L2:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) =
+      e02*y0 + e12*y1 + e22*y2 + e32*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0))"
+  shows
+    "y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2"
+  using induction_step_2_explicit[OF L2]
+  unfolding y2_def brc_choice2_def
+  by simp
+
+lemma brc_choice3_square:
+  fixes e03 e13 e23 e33 y0 y1 y2 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  defines "y3 ≡ brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m"
+  assumes L3:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) =
+      e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0))"
+  shows
+    "y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+  using induction_step_3_explicit[OF L3]
+  unfolding y3_def brc_choice3_def
+  by simp
+
+lemma brc_choice0123_square:
+  fixes e00 e10 e20 e30 e01 e11 e21 e31 e02 e12 e22 e32 e03 e13 e23 e33 :: rat
+  fixes y0 y1 y2 y3 :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  assumes y0_def: "y0 = brc_choice0 e00 e10 e20 e30 y1 y2 y3 x m"
+  assumes y1_def: "y1 = brc_choice1 e01 e11 e21 e31 y0 y2 y3 x m"
+  assumes y2_def: "y2 = brc_choice2 e02 e12 e22 e32 y0 y1 y3 x m"
+  assumes y3_def: "y3 = brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m"
+  assumes L0:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) =
+      e00*y0 + e10*y1 + e20*y2 + e30*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0))"
+  assumes L1:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) =
+      e01*y0 + e11*y1 + e21*y2 + e31*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0))"
+  assumes L2:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) =
+      e02*y0 + e12*y1 + e22*y2 + e32*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0))"
+  assumes L3:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) =
+      e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0))"
+  shows
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2
+    ∧ y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2
+    ∧ y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2
+    ∧ y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+  using induction_step_0123_choices[
+    OF L0 L1 L2 L3 y0_def y1_def y2_def y3_def]
+  . 
+
+lemma brc_last_four_square_from_choices:
+  fixes a b c d m :: nat
+  fixes x :: "rat mat"
+  fixes y0 y1 y2 y3 :: rat
+  fixes x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v: "𝗏 ≥ m"
+  assumes m_gt3: "m > 3"
+  assumes x0_def: "x0 = x $$ (m - 4, 0)"
+  assumes x1_def: "x1 = x $$ (m - 3, 0)"
+  assumes x2_def: "x2 = x $$ (m - 2, 0)"
+  assumes x3_def: "x3 = x $$ (m - 1, 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes choices:
+    "⋀e00 e10 e20 e30 e01 e11 e21 e31 e02 e12 e22 e32 e03 e13 e23 e33.
+      ⟦
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        e00*y0 + e10*y1 + e20*y2 + e30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0));
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        e01*y0 + e11*y1 + e21*y2 + e31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0));
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        e02*y0 + e12*y1 + e22*y2 + e32*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0));
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))
+      ⟧ ⟹
+      y0 = brc_choice0 e00 e10 e20 e30 y1 y2 y3 x m
+    ∧ y1 = brc_choice1 e01 e11 e21 e31 y0 y2 y3 x m
+    ∧ y2 = brc_choice2 e02 e12 e22 e32 y0 y1 y3 x m
+    ∧ y3 = brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m"
+  shows
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2
+    ∧ y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2
+    ∧ y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2
+    ∧ y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+  using brc_last_four_square_if_choices_short[
+    OF four_sq m_v m_gt3
+       x0_def x1_def x2_def x3_def
+       x0_eq x1_eq x2_eq x3_eq choices]
+  .
+
+lemma brc_sequential_elimination_step:
+  fixes e00 e10 e20 e30 e01 e11 e21 e31 e02 e12 e22 e32 e03 e13 e23 e33 :: rat
+  fixes y1a y2a y3a :: rat
+  fixes x :: "rat mat"
+  fixes m :: nat
+  defines "y0 ≡ brc_choice0 e00 e10 e20 e30 y1a y2a y3a x m"
+  defines "y1 ≡ brc_choice1 e01 e11 e21 e31 y0 y2a y3a x m"
+  defines "y2 ≡ brc_choice2 e02 e12 e22 e32 y0 y1 y3a x m"
+  defines "y3 ≡ brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m"
+  assumes L0:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) =
+      e00*y0 + e10*y1a + e20*y2a + e30*y3a +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0))"
+  assumes L1:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) =
+      e01*y0 + e11*y1 + e21*y2a + e31*y3a +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0))"
+  assumes L2:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) =
+      e02*y0 + e12*y1 + e22*y2 + e32*y3a +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0))"
+  assumes L3:
+    "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) =
+      e03*y0 + e13*y1 + e23*y2 + e33*y3 +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0))"
+  shows
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2
+    ∧ y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2
+    ∧ y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2
+    ∧ y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+proof -
+  have L0': "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) =
+      e00*(brc_choice0 e00 e10 e20 e30 y1a y2a y3a x m)
+      + e10*y1a + e20*y2a + e30*y3a +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0))"
+    using L0 unfolding y0_def by simp
+
+  have S0:
+    "y0^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-4)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0)))^2"
+    using brc_choice0_square[OF L0']
+    unfolding y0_def by simp
+
+  have L1': "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) =
+      e01*y0 + e11*(brc_choice1 e01 e11 e21 e31 y0 y2a y3a x m)
+      + e21*y2a + e31*y3a +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0))"
+    using L1 unfolding y1_def by simp
+
+  have S1:
+    "y1^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-3)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0)))^2"
+    using brc_choice1_square[OF L1']
+    unfolding y1_def by simp
+
+  have L2': "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) =
+      e02*y0 + e12*y1
+      + e22*(brc_choice2 e02 e12 e22 e32 y0 y1 y3a x m)
+      + e32*y3a +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0))"
+    using L2 unfolding y2_def by simp
+
+  have S2:
+    "y2^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-2)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0)))^2"
+    using brc_choice2_square[OF L2']
+    unfolding y2_def by simp
+
+  have L3': "(∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) =
+      e03*y0 + e13*y1 + e23*y2
+      + e33*(brc_choice3 e03 e13 e23 e33 y0 y1 y2 x m) +
+      (∑h∈{4..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0))"
+    using L3 unfolding y3_def by simp
+
+  have S3:
+    "y3^2 =
+      ((∑h∈{0..<m}. of_int (N $$ (m-h-1,m-1)) * x $$ (m-h-1,0)) +
+       (∑h∈{m..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0)))^2"
+    using brc_choice3_square[OF L3']
+    unfolding y3_def by simp
+
+  show ?thesis
+    using S0 S1 S2 S3 by blast
+qed
+
+lemma y_inv_norm_brc:
+  fixes a b c d :: nat
+  fixes y0 y1 y2 y3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  shows
+    "let xs = y_inv_of ((a,b,c,d),(y0,y1,y2,y3)) in
+      of_nat (𝗄 - Λ) *
+        (one_of xs^2 + two_of xs^2 + three_of xs^2 + four_of xs^2)
+      =
+      y0^2 + y1^2 + y2^2 + y3^2"
+proof -
+  let ?xs = "y_inv_of ((a,b,c,d),(y0,y1,y2,y3))"
+
+  have nz: "a^2 + b^2 + c^2 + d^2 ≠ 0"
+    using four_sq blocksize_gt_index by simp
+
+  have yback:
+    "y_of ((a,b,c,d), ?xs) = (y0,y1,y2,y3)"
+    using y_inverses_part_2[OF nz, of y0 y1 y2 y3]
+    by simp
+
+  have norm:
+    "let y = y_of ((a,b,c,d), ?xs) in
+      one_of y ^ 2 + two_of y ^ 2 + three_of y ^ 2 + four_of y ^ 2
+      =
+      of_nat (𝗄 - Λ) *
+        (one_of ?xs^2 + two_of ?xs^2 + three_of ?xs^2 + four_of ?xs^2)"
+    using y_of_norm_brc[OF four_sq,
+      of "one_of ?xs" "two_of ?xs" "three_of ?xs" "four_of ?xs"]
+    by (simp add: Let_def)
+
+  show ?thesis
+    using norm yback
+    by (simp add: Let_def)
+qed
+
+lemma y_norm_replace_brc:
+  fixes a b c d :: nat
+  fixes y0 y1 y2 y3 x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+    "of_nat (𝗄 - Λ) * (x0^2 + x1^2 + x2^2 + x3^2)
+     =
+     y0^2 + y1^2 + y2^2 + y3^2"
+proof -
+  let ?xs = "y_inv_of ((a,b,c,d),(y0,y1,y2,y3))"
+
+  have norm:
+    "of_nat (𝗄 - Λ) *
+      (one_of ?xs^2 + two_of ?xs^2 + three_of ?xs^2 + four_of ?xs^2)
+     =
+     y0^2 + y1^2 + y2^2 + y3^2"
+    using y_inv_norm_brc[OF four_sq, of y0 y1 y2 y3]
+    by (simp add: Let_def)
+
+  show ?thesis
+    using norm x0_eq x1_eq x2_eq x3_eq
+    by simp
+qed
+
+lemma brc_four_var_identity_y:
+  fixes a b c d m :: nat
+  fixes y0 y1 y2 y3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  defines "xs ≡ y_inv_of ((a,b,c,d),(y0,y1,y2,y3))"
+  shows
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) *
+      (mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then one_of xs
+           else if i = m - 3 then two_of xs
+           else if i = m - 2 then three_of xs
+           else if i = m - 1 then four_of xs
+           else 0)
+        else 0)) $$ (h,0))^2)
+    =
+    of_int (int Λ) *
+      (one_of xs + two_of xs + three_of xs + four_of xs)^2
+    + y0^2 + y1^2 + y2^2 + y3^2"
+proof -
+  have base:
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) *
+      (mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then one_of xs
+           else if i = m - 3 then two_of xs
+           else if i = m - 2 then three_of xs
+           else if i = m - 1 then four_of xs
+           else 0)
+        else 0)) $$ (h,0))^2)
+    =
+    of_int (int Λ) *
+      (one_of xs + two_of xs + three_of xs + four_of xs)^2
+    + of_int (int (𝗄 - Λ)) *
+      (one_of xs^2 + two_of xs^2 + three_of xs^2 + four_of xs^2)"
+    using brc_v_1_mod_4_identity[
+      OF four_sq m_props,
+      of "one_of xs" "two_of xs" "three_of xs" "four_of xs"]
+    by simp
+
+  have norm:
+    "of_int (int (𝗄 - Λ)) *
+      (one_of xs^2 + two_of xs^2 + three_of xs^2 + four_of xs^2)
+     =
+     y0^2 + y1^2 + y2^2 + y3^2"
+    unfolding xs_def
+    using y_inv_norm_brc[OF four_sq, of y0 y1 y2 y3]
+    by (simp add: Let_def)
+
+  show ?thesis
+    using base norm by simp
+qed
+
+lemma brc_four_var_identity_y_named:
+  fixes a b c d m :: nat
+  fixes y0 y1 y2 y3 x0 x1 x2 x3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) *
+      (mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then x0
+           else if i = m - 3 then x1
+           else if i = m - 2 then x2
+           else if i = m - 1 then x3
+           else 0)
+        else 0)) $$ (h,0))^2)
+    =
+    of_int (int Λ) * (x0 + x1 + x2 + x3)^2
+    + y0^2 + y1^2 + y2^2 + y3^2"
+proof -
+  let ?xs = "y_inv_of ((a,b,c,d),(y0,y1,y2,y3))"
+
+  have main:
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) *
+      (mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then one_of ?xs
+           else if i = m - 3 then two_of ?xs
+           else if i = m - 2 then three_of ?xs
+           else if i = m - 1 then four_of ?xs
+           else 0)
+        else 0)) $$ (h,0))^2)
+    =
+    of_int (int Λ) *
+      (one_of ?xs + two_of ?xs + three_of ?xs + four_of ?xs)^2
+    + y0^2 + y1^2 + y2^2 + y3^2"
+    using brc_four_var_identity_y[OF four_sq m_props, of y0 y1 y2 y3]
+    by simp
+
+  have xs0: "one_of ?xs = x0"
+    using x0_eq by simp
+  have xs1: "two_of ?xs = x1"
+    using x1_eq by simp
+  have xs2: "three_of ?xs = x2"
+    using x2_eq by simp
+  have xs3: "four_of ?xs = x3"
+    using x3_eq by simp
+
+  have sum_eq:
+    "one_of ?xs + two_of ?xs + three_of ?xs + four_of ?xs
+     = x0 + x1 + x2 + x3"
+    using x0_eq x1_eq x2_eq x3_eq
+    by simp
+
+  have inner_eq:
+    "⋀h. (if h = m - 4 then one_of ?xs
+          else if h = m - 3 then two_of ?xs
+          else if h = m - 2 then three_of ?xs
+          else if h = m - 1 then four_of ?xs
+          else 0)
+       =
+         (if h = m - 4 then x0
+          else if h = m - 3 then x1
+          else if h = m - 2 then x2
+          else if h = m - 1 then x3
+          else 0)"
+    using xs0 xs1 xs2 xs3
+    by auto
+
+  show ?thesis
+    using main inner_eq sum_eq
+    by simp
+qed
+
+lemma brc_four_var_identity_for_sparse_x:
+  fixes a b c d m :: nat
+  fixes y0 y1 y2 y3 x0 x1 x2 x3 :: rat
+  fixes x :: "rat mat"
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  assumes x_def:
+    "x = mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then x0
+           else if i = m - 3 then x1
+           else if i = m - 2 then x2
+           else if i = m - 1 then x3
+           else 0)
+        else 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+    =
+    of_int (int Λ) * (x0 + x1 + x2 + x3)^2
+    + y0^2 + y1^2 + y2^2 + y3^2"
+  unfolding x_def
+  using brc_four_var_identity_y_named[
+    OF four_sq m_props x0_eq x1_eq x2_eq x3_eq]
+  by simp
+
+lemma sparse_x_last_four_entries:
+  fixes x :: "rat mat"
+  fixes x0 x1 x2 x3 :: rat
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  assumes x_def:
+    "x = mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then x0
+           else if i = m - 3 then x1
+           else if i = m - 2 then x2
+           else if i = m - 1 then x3
+           else 0)
+        else 0)"
+  shows
+    "x $$ (m - 4,0) = x0"
+    "x $$ (m - 3,0) = x1"
+    "x $$ (m - 2,0) = x2"
+    "x $$ (m - 1,0) = x3"
+proof -
+  have m4: "4 ≤ m"
+    using m_props by simp
+
+  show "x $$ (m - 4,0) = x0"
+    unfolding x_def using m_props m4 by simp
+
+  show "x $$ (m - 3,0) = x1"
+    unfolding x_def using m_props m4 by auto
+
+  show "x $$ (m - 2,0) = x2"
+    unfolding x_def using m_props m4 by auto
+
+  show "x $$ (m - 1,0) = x3"
+    unfolding x_def using m_props m4 by auto
+qed
+
+lemma brc_sparse_x_L0123:
+  fixes a b c d m :: nat
+  fixes y0 y1 y2 y3 x0 x1 x2 x3 :: rat
+  fixes x :: "rat mat"
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  assumes x_def:
+    "x = mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then x0
+           else if i = m - 3 then x1
+           else if i = m - 2 then x2
+           else if i = m - 1 then x3
+           else 0)
+        else 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+   "∃c00 c10 c20 c30 c01 c11 c21 c31 c02 c12 c22 c32 c03 c13 c23 c33.
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        c00*y0 + c10*y1 + c20*y2 + c30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        c01*y0 + c11*y1 + c21*y2 + c31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        c02*y0 + c12*y1 + c22*y2 + c32*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        c03*y0 + c13*y1 + c23*y2 + c33*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+proof -
+  have entries:
+    "x $$ (m - 4,0) = x0"
+    "x $$ (m - 3,0) = x1"
+    "x $$ (m - 2,0) = x2"
+    "x $$ (m - 1,0) = x3"
+    using sparse_x_last_four_entries[OF m_props x_def] .
+
+  have entries_rev:
+    "x0 = x $$ (m - 4,0)"
+    "x1 = x $$ (m - 3,0)"
+    "x2 = x $$ (m - 2,0)"
+    "x3 = x $$ (m - 1,0)"
+    using entries by simp_all
+
+  show ?thesis
+    using brc_L0123_from_last_four[
+      OF four_sq m_props(2) m_props(1)
+         entries_rev(1) entries_rev(2) entries_rev(3) entries_rev(4)
+         x0_eq x1_eq x2_eq x3_eq]
+    .
+qed
+
+lemma brc_sparse_x_identity_and_coeffs:
+  fixes a b c d m :: nat
+  fixes y0 y1 y2 y3 x0 x1 x2 x3 :: rat
+  fixes x :: "rat mat"
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  assumes x_def:
+    "x = mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then x0
+           else if i = m - 3 then x1
+           else if i = m - 2 then x2
+           else if i = m - 1 then x3
+           else 0)
+        else 0)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+    =
+    of_int (int Λ) * (x0 + x1 + x2 + x3)^2
+    + y0^2 + y1^2 + y2^2 + y3^2
+    ∧
+    (∃c00 c10 c20 c30 c01 c11 c21 c31 c02 c12 c22 c32 c03 c13 c23 c33.
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        c00*y0 + c10*y1 + c20*y2 + c30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        c01*y0 + c11*y1 + c21*y2 + c31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        c02*y0 + c12*y1 + c22*y2 + c32*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        c03*y0 + c13*y1 + c23*y2 + c33*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)))"
+proof -
+  have id:
+   "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+    =
+    of_int (int Λ) * (x0 + x1 + x2 + x3)^2
+    + y0^2 + y1^2 + y2^2 + y3^2"
+    using brc_four_var_identity_for_sparse_x[
+      OF four_sq m_props x_def x0_eq x1_eq x2_eq x3_eq] .
+
+  have coeffs:
+    "∃c00 c10 c20 c30 c01 c11 c21 c31 c02 c12 c22 c32 c03 c13 c23 c33.
+      (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0)) =
+        c00*y0 + c10*y1 + c20*y2 + c30*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 4)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0)) =
+        c01*y0 + c11*y1 + c21*y2 + c31*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 3)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0)) =
+        c02*y0 + c12*y1 + c22*y2 + c32*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 2)) * x $$ (m - h - 1, 0))
+    ∧ (∑h = 0..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0)) =
+        c03*y0 + c13*y1 + c23*y2 + c33*y3 +
+        (∑h = 4..<m. of_int (N $$ (m - h - 1, m - 1)) * x $$ (m - h - 1, 0))"
+    using brc_sparse_x_L0123[
+      OF four_sq m_props x_def x0_eq x1_eq x2_eq x3_eq] .
+
+  show ?thesis
+    using id coeffs by blast
+qed
+
+lemma brc_sparse_x_identity_exists:
+  fixes a b c d m :: nat
+  fixes y0 y1 y2 y3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_props: "m > 3" "𝗏 ≥ m"
+  shows
+   "∃(x :: rat mat) (x0 :: rat) (x1 :: rat) (x2 :: rat) (x3 :: rat).
+      x = mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then x0
+           else if i = m - 3 then x1
+           else if i = m - 2 then x2
+           else if i = m - 1 then x3
+           else 0)
+        else 0)
+    ∧ x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))
+    ∧ x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))
+    ∧ x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))
+    ∧ x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))
+    ∧
+      (∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+      =
+      of_int (int Λ) * (x0 + x1 + x2 + x3)^2
+      + y0^2 + y1^2 + y2^2 + y3^2"
+proof -
+  let ?x0 = "one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  let ?x1 = "two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  let ?x2 = "three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  let ?x3 = "four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  let ?X = "mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then ?x0
+           else if i = m - 3 then ?x1
+           else if i = m - 2 then ?x2
+           else if i = m - 1 then ?x3
+           else 0)
+        else 0)"
+
+  have Xdef:
+    "?X = mat 𝗏 1 (λ(i,j).
+        if j = 0 then
+          (if i = m - 4 then ?x0
+           else if i = m - 3 then ?x1
+           else if i = m - 2 then ?x2
+           else if i = m - 1 then ?x3
+           else 0)
+        else 0)"
+    by simp
+
+  have x0eq: "?x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))" by simp
+  have x1eq: "?x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))" by simp
+  have x2eq: "?x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))" by simp
+  have x3eq: "?x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))" by simp
+
+  have id:
+    "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * ?X $$ (h,0))^2)
+      =
+      of_int (int Λ) * (?x0 + ?x1 + ?x2 + ?x3)^2
+      + y0^2 + y1^2 + y2^2 + y3^2"
+    by (rule brc_four_var_identity_for_sparse_x[
+        OF four_sq m_props Xdef x0eq x1eq x2eq x3eq])
+
+  show ?thesis
+    using id by blast
+qed
+
+lemma brc_simplified_to_y:
+  fixes a b c d :: nat
+  fixes x0 x1 x2 x3 y0 y1 y2 y3 :: rat
+  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes brc_simplified:
+    "B =
+       of_int (int Λ) * (x0 + x1 + x2 + x3)^2 +
+       of_int (int (𝗄 - Λ)) * (x0^2 + x1^2 + x2^2 + x3^2)"
+  assumes x0_eq: "x0 = one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x1_eq: "x1 = two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x2_eq: "x2 = three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  assumes x3_eq: "x3 = four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3)))"
+  shows
+    "B =
+       of_int (int Λ) * (x0 + x1 + x2 + x3)^2 +
+       y0^2 + y1^2 + y2^2 + y3^2"
+  using brc_simplified
+        y_norm_replace_brc[OF four_sq x0_eq x1_eq x2_eq x3_eq]
+  by simp
+
+lemma sum_last_four:
+  fixes f :: "nat ⇒ rat"
+  assumes m4: "4 ≤ m"
+  shows "(∑j = m - 4..<m. f j) =
+    f (m - 4) + f (m - 3) + f (m - 2) + f (m - 1)"
+proof -
+  have a1: "Suc (m - 4) = m - 3"
+    using m4 by simp
+  have a2: "Suc (Suc (m - 4)) = m - 2"
+    using m4 by simp
+  have a3: "Suc (Suc (Suc (m - 4))) = m - 1"
+    using m4 by simp
+
+  have "(∑j = m - 4..<m. f j)
+      = f (m - 4) + f (Suc (m - 4)) + f (Suc (Suc (m - 4))) +
+        f (Suc (Suc (Suc (m - 4))))"
+    using m4
+    by (subst sum.atLeast_Suc_lessThan, simp_all)+
+
+  then show ?thesis
+    using a1 a2 a3
+    by simp
+qed
+
+lemma sum_split_last_four:
+  fixes f :: "nat ⇒ rat"
+  assumes m4: "4 ≤ m"
+  shows "(∑j = 0..<m. f j) =
+    (∑j = 0..<m - 4. f j) +
+    f (m - 4) + f (m - 3) + f (m - 2) + f (m - 1)"
+proof -
+  have split:
+    "(∑j = 0..<m. f j) =
+     (∑j = 0..<m - 4. f j) + (∑j = m - 4..<m. f j)"
+    using m4 by (simp add: sum.atLeastLessThan_concat)
+  also have "... =
+     (∑j = 0..<m - 4. f j) +
+     f (m - 4) + f (m - 3) + f (m - 2) + f (m - 1)"
+    using sum_last_four[OF m4, of f]
+    by (simp add: algebra_simps)
+  finally show ?thesis .
+qed
+
+lemma sumsq_split_last_four:
+  fixes f :: "nat ⇒ rat"
+  assumes m4: "4 ≤ m"
+  shows
+   "(∑j = 0..<m. (f j)^2)
+    =
+    (∑j = 0..<m-4. (f j)^2)
+    + (f (m - 4))^2
+    + (f (m - 3))^2
+    + (f (m - 2))^2
+    + (f (m - 1))^2"
+proof -
+  have
+   "(∑j = 0..<m. (f j)^2)
+    =
+    (∑j = 0..<m-4. (f j)^2)
+    +
+    (∑j = m-4..<m. (f j)^2)"
+    using m4
+    by (simp add: sum.atLeastLessThan_concat)
+
+  also have
+   "... =
+    (∑j = 0..<m-4. (f j)^2)
+    +
+    ((f (m - 4))^2
+     + (f (m - 3))^2
+     + (f (m - 2))^2
+     + (f (m - 1))^2)"
+    using sum_last_four[OF m4, of "λj. (f j)^2"]
+    by simp
+
+  finally show ?thesis
+    by (simp add: algebra_simps)
+qed
+
+lemma brc_linear_sum_split_last_four:
+  fixes x :: "rat mat"
+  assumes m4: "4 ≤ m"
+  defines "L ≡ λj. ∑h∈{0..<𝗏}. of_int (N $$ (h,j)) * x $$ (h,0)"
+  shows
+   "(∑j = 0..<m. (L j)^2)
+    =
+    (∑j = 0..<m-4. (L j)^2)
+    + (L (m - 4))^2
+    + (L (m - 3))^2
+    + (L (m - 2))^2
+    + (L (m - 1))^2"
+  using sumsq_split_last_four[OF m4, of L]
+  by simp
+
+lemma brc_linear_sum_split_last_four_expanded:
+  fixes x :: "rat mat"
+  assumes m4: "4 ≤ m"
+  shows
+   "(∑j = 0..<m.
+      (∑h∈{0..<𝗏}. of_int (N $$ (h,j)) * x $$ (h,0))^2)
+    =
+    (∑j = 0..<m-4.
+      (∑h∈{0..<𝗏}. of_int (N $$ (h,j)) * x $$ (h,0))^2)
+    + (∑h∈{0..<𝗏}. of_int (N $$ (h,m-4)) * x $$ (h,0))^2
+    + (∑h∈{0..<𝗏}. of_int (N $$ (h,m-3)) * x $$ (h,0))^2
+    + (∑h∈{0..<𝗏}. of_int (N $$ (h,m-2)) * x $$ (h,0))^2
+    + (∑h∈{0..<𝗏}. of_int (N $$ (h,m-1)) * x $$ (h,0))^2"
+  using brc_linear_sum_split_last_four[OF m4, of x]
+  by simp
+
+definition brc_descent_invariant :: "nat ⇒ bool" where
+  "brc_descent_invariant m ⟷
+    (∃q0 q1 q2 :: rat.
+      q0^2 =
+        of_nat (𝗄 - Λ) * q1^2 +
+        of_nat Λ * q2^2)"
+
+definition brc_descent_form :: "nat ⇒ rat mat ⇒ rat ⇒ bool" where
+  "brc_descent_form m x C ⟷
+    C =
+      (∑i∈{0..<m}.
+        (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2)"
+
+definition brc_linear_form :: "rat mat ⇒ nat ⇒ rat" where
+  "brc_linear_form x i =
+    (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))"
+
+definition brc_square_sum_upto :: "nat ⇒ rat mat ⇒ rat" where
+  "brc_square_sum_upto m x =
+    (∑i∈{0..<m}. (brc_linear_form x i)^2)"
+
+definition brc_tail_equation :: "nat ⇒ rat mat ⇒ rat ⇒ rat ⇒ bool" where
+  "brc_tail_equation m x Y Z ⟷
+    brc_square_sum_upto m x =
+      of_nat Λ * Z^2 + Y"
+
+lemma brc_tail_equationI:
+  assumes
+    "brc_square_sum_upto m x = of_nat Λ * Z^2 + Y"
+  shows "brc_tail_equation m x Y Z"
+  using assms
+  unfolding brc_tail_equation_def
+  by simp
+
+lemma brc_tail_equationD:
+  assumes "brc_tail_equation m x Y Z"
+  shows "brc_square_sum_upto m x = of_nat Λ * Z^2 + Y"
+  using assms
+  unfolding brc_tail_equation_def
+  by simp
+
+lemma brc_tail_equation_full:
+  fixes x :: "rat mat"
+  shows
+    "brc_tail_equation 𝗏 x
+      (of_nat (𝗄 - Λ) * (∑j∈{0..<𝗏}. (x $$ (j,0))^2))
+      (∑j∈{0..<𝗏}. x $$ (j,0))"
+proof -
+  have
+    "brc_square_sum_upto 𝗏 x =
+      of_nat Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2 +
+      of_nat (𝗄 - Λ) * (∑j∈{0..<𝗏}. (x $$ (j,0))^2)"
+    unfolding brc_square_sum_upto_def brc_linear_form_def
+    using brc_x_equation[of x]
+    by simp
+  then show ?thesis
+    unfolding brc_tail_equation_def
+    by (simp add: algebra_simps)
+qed
+
+lemma brc_v_eq_4w_plus_1:
+  assumes "𝗏 mod 4 = 1"
+  shows "∃w. 𝗏 = 4 * w + 1"
+proof
+  show "𝗏 = 4 * (𝗏 div 4) + 1"
+    using assms
+    by (metis div_mult_mod_eq mult.commute)
+qed
+
+lemma brc_four_squares_k_minus_lambda:
+  shows "∃a b c d :: nat. 𝗄 - Λ = a^2 + b^2 + c^2 + d^2"
+proof -
+  obtain a b c d :: nat where h:
+    "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+    using four_squares_nat by blast
+  have "𝗄 - Λ = a^2 + b^2 + c^2 + d^2"
+    using h by simp
+  then show ?thesis
+    by blast
 qed
 
 (*lemma brc_v_1_mod_4:
