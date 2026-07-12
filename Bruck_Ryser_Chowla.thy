@@ -159,12 +159,6 @@ context ordered_sym_bibd
 
 begin
 
-lemma lambda_all_ones:
-  fixes l :: "'b :: {monoid_mult, zero}"
-  assumes "h < 𝗏" "j < 𝗏"
-  shows "(l ⋅⇩m (J⇩m 𝗏)) $$ (j, h) = l"
-  using assms by simp
-
 lemma lambda_all_ones_extension:
   fixes x :: "rat mat"
   shows "(∑j ∈ {0..<𝗏}. ∑h ∈ {0..<𝗏}.
@@ -187,25 +181,6 @@ proof -
     by (metis sum_product)
   also have "… = of_nat Λ * (∑j ∈ {0..<𝗏}. x$$(j,0))^2"
     by (metis power2_eq_square)
-  finally show ?thesis .
-qed
-
-lemma identity_matrix_property:
-  fixes x :: "rat mat"
-  shows "int (𝗋 - Λ) * (∑ j ∈ {0..<𝗏}. (∑ h ∈ {0..<𝗏}.  
-         (if j = h then 1 else 0) * x $$ (h, 0) * x $$ (j, 0))) = 
-         int (𝗋 - Λ) * (∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2)"
-proof -
-  have step1: "⋀j h. (if j = h then 1 else 0) * x $$ (h, 0) * x $$ (j, 0) = 
-                     (if j = h then x $$ (h, 0) * x $$ (j, 0) else 0)"
-    by auto
-  have "int (𝗋 - Λ) * (∑ j ∈ {0..<𝗏}. (∑ h ∈ {0..<𝗏}. (if j = h then 1 else 0) * x $$ (h, 0) * x $$ (j, 0)))
-      = int (𝗋 - Λ) * (∑ j ∈ {0..<𝗏}. (∑ h ∈ {0..<𝗏}. (if j = h then x $$ (h, 0) * x $$ (j, 0) else 0)))"
-    using step1 by simp
-  also have "... = int (𝗋 - Λ) * (∑ j ∈ {0..<𝗏}. x $$ (j, 0) * x $$ (j, 0))"
-    by simp
-  also have "... = int (𝗋 - Λ) * (∑ j ∈ {0..<𝗏}. (x $$ (j, 0))^2)"
-    by (simp add: power2_eq_square)
   finally show ?thesis .
 qed
 
@@ -1969,12 +1944,6 @@ definition t_of :: "rat mat ⇒ rat" where
 definition u_of :: "rat mat ⇒ rat" where
   "u_of x = (∑j∈{0..<𝗏}. (x $$ (j,0))^2)"
 
-lemma brc_x_equation_named:
-  fixes x :: "rat mat"
-  shows "S_of x = of_int (int Λ) * (t_of x)^2 + of_int (int (𝗄 - Λ)) * (u_of x)"
-  unfolding S_of_def t_of_def u_of_def
-  using brc_x_equation by simp
-
 lemma brc_recursive_elimination_weak:
   fixes x :: "rat mat"
   assumes brc_eq: "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
@@ -1987,17 +1956,6 @@ lemma brc_recursive_elimination_weak:
   using brc_eq by (intro exI[of _ "(∑i∈{0..<𝗏}. (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))^2)"]
                    exI[of _ "(∑j∈{0..<𝗏}. x $$ (j,0))"]
                    exI[of _ "(∑j∈{0..<𝗏}. (x $$ (j,0))^2)"]) simp
-
-lemma sum_head4_from_tail:
-  fixes f :: "nat ⇒ rat" and A :: rat and m :: nat
-  assumes m4: "4 ≤ m"
-  assumes eq: "(∑h = 0..<m. f h) = A + (∑h = 4..<m. f h)"
-  shows "(∑h = 0..<4. f h) = A"
-proof -
-  have split: "(∑h = 0..<m. f h) = (∑h = 0..<4. f h) + (∑h = 4..<m. f h)"
-    using m4 by (simp add: sum.atLeastLessThan_concat algebra_simps)
-  from eq split show ?thesis by simp
-qed
 
 lemma brc_v_1_mod_4_identity:
   fixes a b c d m :: nat
@@ -3895,25 +3853,6 @@ proof -
     by simp
 qed
 
-lemma sum_split_last_four:
-  fixes f :: "nat ⇒ rat"
-  assumes m4: "4 ≤ m"
-  shows "(∑j = 0..<m. f j) =
-    (∑j = 0..<m - 4. f j) +
-    f (m - 4) + f (m - 3) + f (m - 2) + f (m - 1)"
-proof -
-  have split:
-    "(∑j = 0..<m. f j) =
-     (∑j = 0..<m - 4. f j) + (∑j = m - 4..<m. f j)"
-    using m4 by (simp add: sum.atLeastLessThan_concat)
-  also have "... =
-     (∑j = 0..<m - 4. f j) +
-     f (m - 4) + f (m - 3) + f (m - 2) + f (m - 1)"
-    using sum_last_four[OF m4, of f]
-    by (simp add: algebra_simps)
-  finally show ?thesis .
-qed
-
 lemma sumsq_split_last_four:
   fixes f :: "nat ⇒ rat"
   assumes m4: "4 ≤ m"
@@ -4232,11 +4171,6 @@ proof -
     by (simp add: sum_distrib_left)
 qed
 
-lemma v_4w_plus_1_minus_1:
-  assumes v_form: "𝗏 = 4 * w + 1"
-  shows "𝗏 - 1 = 4 * w"
-  using v_form by simp
-
 lemma brc_x_sum_split_4w_last:
   fixes x :: "rat mat"
   assumes v_form: "𝗏 = 4 * w + 1"
@@ -4514,12 +4448,6 @@ next
     by blast
 qed
 
-lemma choose_y_square_cancel_named:
-  fixes e rest :: rat
-  obtains y :: rat where "(e * y + rest)^2 = y^2"
-  using choose_y_square_cancel[of e rest]
-  by blast
-
 lemma eliminate_one_square_from_equation:
   fixes e rest RHS :: rat
   assumes eq: "(e * y + rest)^2 + T = y^2 + RHS"
@@ -4764,31 +4692,6 @@ proof -
   show ?thesis
     using brc_v_4w_plus_1_rat_from_cancel_condition[OF v_form abcd cancel nz] .
 qed
-
-lemma brc_cancel_conditionI:
-  fixes a b c d :: nat
-  fixes x :: "rat mat"
-  assumes
-    "(∑i∈{0..<𝗏}. (brc_L x i)^2)
-     =
-     (brc_L x (𝗏 - 1))^2 + y_blocks_sqsum a b c d x w"
-  shows "brc_cancel_condition a b c d x w"
-  using assms
-  unfolding brc_cancel_condition_def
-  by simp
-
-lemma brc_cancel_condition_from_pairwise_cancel:
-  fixes a b c d :: nat
-  fixes x :: "rat mat"
-  assumes split:
-    "(∑i∈{0..<𝗏}. (brc_L x i)^2)
-     =
-     (brc_L x (𝗏 - 1))^2 +
-     (∑h∈{0..<w}. y_block_sqsum a b c d x h)"
-  shows "brc_cancel_condition a b c d x w"
-  using split
-  unfolding brc_cancel_condition_def y_blocks_sqsum_def
-  by simp
 
 lemma brc_cancel_condition_from_indexed_cancel:
   fixes a b c d :: nat
@@ -6578,462 +6481,6 @@ lemma brc_prefix_sum_blocks:
   using prefix
   unfolding brc_prefix_eliminated_def
   by simp
-
-lemma brc_prefix_good_exists_with_yv_nonzero:
-  assumes v_form: "𝗏 = 4 * w + 1"
-  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
-  assumes nzsum: "a^2 + b^2 + c^2 + d^2 ≠ 0"
-  assumes local_step:
-    "⋀x h m.
-      m ≤ 𝗏 ⟹
-      3 < m ⟹
-      m = 4 * Suc h ⟹
-      4*h < 𝗏 ⟹
-      4*h + 1 < 𝗏 ⟹
-      4*h + 2 < 𝗏 ⟹
-      4*h + 3 < 𝗏 ⟹
-      ∃x'.
-        (∀i. i < 4*h ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-        (∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-        y_block_sqsum a b c d x' h =
-          (∑j∈{0..<4}.
-            (∑r∈{0..<m}.
-              of_int (N $$ (m-r-1,m-j-1)) * x' $$ (m-r-1,0))^2)"
-  shows "∃x. brc_prefix_good a b c d x w w ∧ brc_yv x w ≠ 0"
-  sorry
-
-lemma brc_L_sqsum_as_prefix_blocks_cond:
-  assumes vanish_tail:
-    "⋀h j. h < w ⟹ j < 4 ⟹
-      (∑r∈{4 * Suc h..<𝗏}.
-        of_int (N $$ (r, 4*h+j)) * x $$ (r,0)) = 0"
-  shows
-    "(∑i∈{0..<4*w}. (brc_L x i)^2)
-     =
-     (∑h∈{0..<w}.
-        (∑j∈{0..<4}.
-          (∑r∈{0..<4 * Suc h}.
-            of_int (N $$ (4 * Suc h-r-1,4 * Suc h-j-1)) *
-            x $$ (4 * Suc h-r-1,0))^2))"
-proof -
-  have split_i:
-    "(∑i∈{0..<4*w}. (brc_L x i)^2)
-     =
-     (∑h∈{0..<w}. ∑j∈{0..<4}. (brc_L x (4*h+j))^2)"
-  proof -
-    have A:
-      "(∑h∈{0..<w}. ∑j∈{0..<4}. (brc_L x (4*h+j))^2)
-        = (∑p∈{0..<w} × {0..<4}.
-              (brc_L x (4 * fst p + snd p))^2)"
-      by (simp add: sum.cartesian_product case_prod_unfold)
-
-    have inj:
-      "inj_on (λp::nat×nat. 4 * fst p + snd p) ({0..<w} × {0..<4})"
-    proof (rule inj_onI)
-      fix p q :: "nat × nat"
-      assume p_mem: "p ∈ {0..<w} × {0..<4}"
-      assume q_mem: "q ∈ {0..<w} × {0..<4}"
-      assume eq: "4 * fst p + snd p = 4 * fst q + snd q"
-
-      obtain hp jp where p_def: "p = (hp,jp)" and hp_lt: "hp < w" and jp_lt: "jp < 4"
-        using p_mem by auto
-      obtain hq jq where q_def: "q = (hq,jq)" and hq_lt: "hq < w" and jq_lt: "jq < 4"
-        using q_mem by auto
-
-      have jq_mod: "(4 * hq + jq) mod 4 = jq"
-        using jq_lt by simp
-      have jp_mod: "(4 * hp + jp) mod 4 = jp"
-        using jp_lt by simp
-
-      have jq_mod: "(4 * hq + jq) mod 4 = jq"
-        using jq_lt by simp
-      have jp_mod: "(4 * hp + jp) mod 4 = jp"
-        using jp_lt by simp
-
-      have mod_eq:
-        "(4 * hp + jp) mod 4 = (4 * hq + jq) mod 4"
-        using eq p_def q_def
-        by simp
-
-      have jp_eq_jq: "jp = jq"
-        using mod_eq jp_mod jq_mod
-        by simp
-
-      have hp_eq_hq: "hp = hq"
-        using eq p_def q_def jp_eq_jq
-        by simp
-
-      show "p = q"
-        using p_def q_def hp_eq_hq jp_eq_jq
-        by simp
-    qed
-
-    have image_eq:
-      "(λp::nat×nat. 4 * fst p + snd p) ` ({0..<w} × {0..<4}) = {0..<4*w}"
-    proof
-      show "(λp::nat×nat. 4 * fst p + snd p) ` ({0..<w} × {0..<4}) ⊆ {0..<4*w}"
-        by auto
-    next
-      show "{0..<4*w} ⊆ (λp::nat×nat. 4 * fst p + snd p) ` ({0..<w} × {0..<4})"
-      proof
-        fix i
-        assume i_mem: "i ∈ {0..<4*w}"
-        have h_lt: "i div 4 < w"
-          using i_mem by auto
-        have j_lt: "i mod 4 < 4"
-          by simp
-        have i_eq: "4 * (i div 4) + (i mod 4) = i"
-          by simp
-        show "i ∈ (λp::nat×nat. 4 * fst p + snd p) ` ({0..<w} × {0..<4})"
-          using h_lt j_lt i_eq
-          by (intro image_eqI[where x="(i div 4, i mod 4)"]) auto
-      qed
-    qed
-
-    have B_rev:
-      "(∑i∈{0..<4*w}. (brc_L x i)^2)
-       =
-       (∑p∈{0..<w} × {0..<4}.
-          (brc_L x (4 * fst p + snd p))^2)"
-      by (rule sum.reindex_cong[OF inj image_eq[symmetric]]) simp
-
-    have B:
-      "(∑p∈{0..<w} × {0..<4}.
-          (brc_L x (4 * fst p + snd p))^2)
-       =
-       (∑i∈{0..<4*w}. (brc_L x i)^2)"
-      using B_rev by simp
-
-    show ?thesis
-      using A B
-      by simp
-  qed
-
-  have col_eq:
-    "⋀h j. h < w ⟹ j < 4 ⟹
-      brc_L x (4*h+j) =
-      (∑r∈{0..<4 * Suc h}.
-        of_int (N $$ (4 * Suc h-r-1,4 * Suc h-j-1)) *
-        x $$ (4 * Suc h-r-1,0))"
-    sorry
-
-  show ?thesis
-    using split_i col_eq
-    by simp
-qed
-
-lemma brc_elimination_witness_from_prefix_good:
-  assumes good: "brc_prefix_good a b c d x w w"
-  shows "brc_elimination_witness a b c d x w"
-proof -
-  have prefix:
-    "brc_prefix_eliminated a b c d x w"
-    using good
-    unfolding brc_prefix_good_def
-    by simp
-
-  have vanish:
-    "⋀h j. h < w ⟹ j < 4 ⟹
-      (∑r∈{4 * Suc h..<𝗏}.
-        of_int (N $$ (r, 4*h+j)) * x $$ (r,0)) = 0"
-    using good
-    unfolding brc_prefix_good_def
-    by simp
-
-  show ?thesis
-    unfolding brc_elimination_witness_def y_blocks_sqsum_def
-    using brc_prefix_sum_blocks[OF prefix]
-          brc_L_sqsum_as_prefix_blocks_cond[OF vanish]
-    by simp
-qed
-
-lemma brc_prefix_eliminated_step:
-  assumes prefix: "brc_prefix_eliminated a b c d x h"
-  assumes local:
-    "∃x'.
-      (∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-      y_block_sqsum a b c d x' h =
-      (∑j∈{0..<4}.
-        (∑r∈{0..<4 * Suc h}.
-          of_int (N $$ (4 * Suc h-r-1,4 * Suc h-j-1)) *
-          x' $$ (4 * Suc h-r-1,0))^2)"
-  shows "∃x'. brc_prefix_eliminated a b c d x' (Suc h)"
-  sorry
-
-lemma brc_local_block_elimination_step:
-  fixes a b c d :: nat
-  fixes x :: "rat mat"
-  fixes h m :: nat
-  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
-  assumes nzsum: "a^2 + b^2 + c^2 + d^2 ≠ 0"
-  assumes m_v: "m ≤ 𝗏"
-  assumes m_gt3: "3 < m"
-  assumes m_block: "m = 4 * Suc h"
-  assumes b0: "4*h < 𝗏"
-  assumes b1: "4*h + 1 < 𝗏"
-  assumes b2: "4*h + 2 < 𝗏"
-  assumes b3: "4*h + 3 < 𝗏"
-  shows "∃x'.
-    (∀i. i < 4*h ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-    (∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-    y_block_sqsum a b c d x' h =
-    (∑j∈{0..<4}.
-       (∑r∈{0..<m}.
-          of_int (N $$ (m-r-1,m-j-1)) * x' $$ (m-r-1,0))^2)"
-proof -
-  let ?m = "m"
-
-  obtain y0 y1 y2 y3 :: rat where yy:
-    "True"
-    by simp
-
-  let ?x' =
-    "update_x_block x h
-      (one_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3))))
-      (two_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3))))
-      (three_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3))))
-      (four_of (y_inv_of ((a,b,c,d),(y0,y1,y2,y3))))"
-
-  have before:
-    "∀i. i < 4*h ⟶ i < 𝗏 ⟶ ?x' $$ (i,0) = x $$ (i,0)"
-  proof
-    fix i
-    show "i < 4*h ⟶ i < 𝗏 ⟶ ?x' $$ (i,0) = x $$ (i,0)"
-    proof
-      assume i_lt_block: "i < 4*h"
-      show "i < 𝗏 ⟶ ?x' $$ (i,0) = x $$ (i,0)"
-      proof
-        assume i_lt: "i < 𝗏"
-        show "?x' $$ (i,0) = x $$ (i,0)"
-          using update_x_block_preserve_before[OF i_lt_block i_lt]
-          by simp
-      qed
-    qed
-  qed
-
-  have after:
-    "∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ ?x' $$ (i,0) = x $$ (i,0)"
-  proof
-    fix i
-    show "4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ ?x' $$ (i,0) = x $$ (i,0)"
-    proof
-      assume i_ge: "4 * Suc h ≤ i"
-      show "i < 𝗏 ⟶ ?x' $$ (i,0) = x $$ (i,0)"
-      proof
-        assume i_lt: "i < 𝗏"
-        show "?x' $$ (i,0) = x $$ (i,0)"
-          using update_x_block_preserve_after[OF i_ge i_lt]
-          by simp
-      qed
-    qed
-  qed
-
-  have local_eq:
-    "y_block_sqsum a b c d ?x' h =
-       (∑j∈{0..<4}.
-          (∑r∈{0..<m}.
-             of_int (N $$ (m-r-1,m-j-1)) *
-             ?x' $$ (m-r-1,0))^2)"
-    sorry
-
-  show ?thesis
-  proof
-    show
-      "(∀i. i < 4*h ⟶ i < 𝗏 ⟶ ?x' $$ (i,0) = x $$ (i,0)) ∧
-       (∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ ?x' $$ (i,0) = x $$ (i,0)) ∧
-       y_block_sqsum a b c d ?x' h =
-       (∑j∈{0..<4}.
-          (∑r∈{0..<m}.
-             of_int (N $$ (m-r-1,m-j-1)) *
-             ?x' $$ (m-r-1,0))^2)"
-      using before after local_eq
-      by simp
-  qed
-qed
-
-lemma brc_local_block_elimination_step_weak:
-  assumes four_sq: "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
-  assumes nzsum: "a^2 + b^2 + c^2 + d^2 ≠ 0"
-  assumes m_v: "m ≤ 𝗏"
-  assumes m_gt3: "3 < m"
-  assumes m_block: "m = 4 * Suc h"
-  assumes b0: "4*h < 𝗏"
-  assumes b1: "4*h + 1 < 𝗏"
-  assumes b2: "4*h + 2 < 𝗏"
-  assumes b3: "4*h + 3 < 𝗏"
-  shows "∃x'.
-    (∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-    y_block_sqsum a b c d x' h =
-    (∑j∈{0..<4}.
-       (∑r∈{0..<m}.
-          of_int (N $$ (m-r-1,m-j-1)) * x' $$ (m-r-1,0))^2)"
-proof -
-  obtain x' where after:
-    "∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)"
-    and eq:
-    "y_block_sqsum a b c d x' h =
-     (∑j∈{0..<4}.
-       (∑r∈{0..<m}.
-          of_int (N $$ (m-r-1,m-j-1)) * x' $$ (m-r-1,0))^2)"
-    using brc_local_block_elimination_step[
-      OF four_sq nzsum m_v m_gt3 m_block b0 b1 b2 b3, of x]
-    by blast
-
-  show ?thesis
-    using after eq by blast
-qed
-
-lemma brc_yv_nonzero_elimination_witness_exists_from_local_step:
-  assumes v_form: "𝗏 = 4 * w + 1"
-  assumes local_step:
-  "⋀a b c d x h m.
-    a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ ⟹
-    a^2 + b^2 + c^2 + d^2 ≠ 0 ⟹
-    m ≤ 𝗏 ⟹
-    3 < m ⟹
-    m = 4 * Suc h ⟹
-    4*h < 𝗏 ⟹
-    4*h + 1 < 𝗏 ⟹
-    4*h + 2 < 𝗏 ⟹
-    4*h + 3 < 𝗏 ⟹
-    ∃x'.
-      (∀i. i < 4*h ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-      (∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-      y_block_sqsum a b c d x' h =
-        (∑j∈{0..<4}.
-          (∑r∈{0..<m}.
-            of_int (N $$ (m-r-1,m-j-1)) * x' $$ (m-r-1,0))^2)"
-  shows "∃a b c d x.
-       𝗄 - Λ = a^2 + b^2 + c^2 + d^2 ∧
-       brc_elimination_witness a b c d x w ∧
-       brc_yv x w ≠ 0"
-proof -
-  obtain a b c d :: nat where abcd:
-    "𝗄 - Λ = a^2 + b^2 + c^2 + d^2"
-    using sum_of_four_squares[of "𝗄 - Λ"]
-    by blast
-
-  have k_gt_lam: "Λ < 𝗄"
-    using blocksize_gt_index .
-
-  have diff_pos: "0 < 𝗄 - Λ"
-    using k_gt_lam by simp
-
-  have nzsum: "a^2 + b^2 + c^2 + d^2 ≠ 0"
-    using abcd diff_pos
-    by auto
-
-  have start_nz:
-    "brc_yv (last_unit_x w) w ≠ 0"
-    using last_unit_x_yv_nonzero[OF v_form] .
-
-  have local_step_abcd:
-    "⋀x h m.
-      m ≤ 𝗏 ⟹
-      3 < m ⟹
-      m = 4 * Suc h ⟹
-      4*h < 𝗏 ⟹
-      4*h + 1 < 𝗏 ⟹
-      4*h + 2 < 𝗏 ⟹
-      4*h + 3 < 𝗏 ⟹
-      ∃x'.
-        (∀i. i < 4*h ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-        (∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-        y_block_sqsum a b c d x' h =
-          (∑j∈{0..<4}.
-            (∑r∈{0..<m}.
-              of_int (N $$ (m-r-1,m-j-1)) * x' $$ (m-r-1,0))^2)"
-  proof -
-    fix x h m
-    assume m_v: "m ≤ 𝗏"
-    assume m_gt3: "3 < m"
-    assume m_block: "m = 4 * Suc h"
-    assume b0: "4*h < 𝗏"
-    assume b1: "4*h + 1 < 𝗏"
-    assume b2: "4*h + 2 < 𝗏"
-    assume b3: "4*h + 3 < 𝗏"
-
-    show "∃x'.
-        (∀i. i < 4*h ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-        (∀i. 4 * Suc h ≤ i ⟶ i < 𝗏 ⟶ x' $$ (i,0) = x $$ (i,0)) ∧
-        y_block_sqsum a b c d x' h =
-          (∑j∈{0..<4}.
-            (∑r∈{0..<m}.
-              of_int (N $$ (m-r-1,m-j-1)) * x' $$ (m-r-1,0))^2)"
-      using local_step[
-        OF abcd[symmetric] nzsum m_v m_gt3 m_block b0 b1 b2 b3]
-      .
-  qed
-
-  have exists_good:
-    "∃x. brc_prefix_good a b c d x w w ∧ brc_yv x w ≠ 0"
-    using brc_prefix_good_exists_with_yv_nonzero[
-      OF v_form abcd[symmetric] nzsum local_step_abcd]
-    by blast
-
-  obtain x where good:
-    "brc_prefix_good a b c d x w w"
-    and yv:
-    "brc_yv x w ≠ 0"
-    using exists_good
-    by blast
-
-  have elim:
-    "brc_elimination_witness a b c d x w"
-    using brc_elimination_witness_from_prefix_good[OF good] .
-
-  have exists_elim:
-    "∃x. brc_elimination_witness a b c d x w ∧ brc_yv x w ≠ 0"
-    using elim yv
-    by blast
-
-  then obtain x where elim:
-    "brc_elimination_witness a b c d x w"
-    and yv_nz:
-    "brc_yv x w ≠ 0"
-    by blast
-
-  show ?thesis
-    using abcd elim yv_nz
-    by blast
-qed
-
-lemma brc_yv_nonzero_elimination_witness_exists:
-  assumes v_form: "𝗏 = 4 * w + 1"
-  shows "∃a b c d x.
-       𝗄 - Λ = a^2 + b^2 + c^2 + d^2 ∧
-       brc_elimination_witness a b c d x w ∧
-       brc_yv x w ≠ 0"
-  using brc_yv_nonzero_elimination_witness_exists_from_local_step[
-    OF v_form brc_local_block_elimination_step]
-  .
-
-lemma brc_last_one_elimination_witness_exists:
-  assumes v_form: "𝗏 = 4 * w + 1"
-  shows "∃a b c d x.
-       𝗄 - Λ = a^2 + b^2 + c^2 + d^2 ∧
-       brc_last_one_elimination_witness a b c d x w"
-  using brc_last_one_elimination_witness_exists_from_yv_nonzero[
-    OF v_form brc_yv_nonzero_elimination_witness_exists[OF v_form]]
-  .
-
-theorem brc_v_4w_plus_1_rat_final_conditional:
-  assumes v_form: "𝗏 = 4 * w + 1"
-  assumes witness:
-    "∃a b c d x.
-       𝗄 - Λ = a^2 + b^2 + c^2 + d^2 ∧
-       brc_last_one_elimination_witness a b c d x w"
-  shows "brc_descent_invariant w"
-  using brc_v_4w_plus_1_rat_from_last_one_elimination_witness[
-    OF v_form witness]
-  .
-
-theorem brc_v_4w_plus_1_rat:
-  assumes v_form: "𝗏 = 4 * w + 1"
-  shows "brc_descent_invariant w"
-  using brc_v_4w_plus_1_rat_final_conditional[
-    OF v_form brc_last_one_elimination_witness_exists[OF v_form]]
-  .
 
 end
 end
