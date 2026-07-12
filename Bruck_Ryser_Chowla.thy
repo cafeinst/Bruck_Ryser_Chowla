@@ -6482,5 +6482,727 @@ lemma brc_prefix_sum_blocks:
   unfolding brc_prefix_eliminated_def
   by simp
 
+definition brc_minus_equation :: bool where
+  "brc_minus_equation ⟷
+    (∃x y z :: rat.
+      (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
+      x^2 = of_nat (𝗄 - Λ) * y^2 - of_nat Λ * z^2)"
+
+lemma brc_minus_from_terminal:
+  fixes xv1 y0 yv1 :: rat
+  assumes terminal:
+    "of_nat (𝗄 - Λ) * xv1^2 =
+       of_nat Λ * y0^2 + yv1^2"
+  assumes nonzero:
+    "xv1 ≠ 0 ∨ y0 ≠ 0 ∨ yv1 ≠ 0"
+  shows "brc_minus_equation"
+proof -
+  have eq:
+    "yv1^2 =
+       of_nat (𝗄 - Λ) * xv1^2 -
+       of_nat Λ * y0^2"
+    using terminal
+    by linarith
+
+  show ?thesis
+    unfolding brc_minus_equation_def
+  proof -
+    show "∃x y z :: rat.
+      (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧
+      x^2 = of_nat (𝗄 - Λ) * y^2 - of_nat Λ * z^2"
+      using eq nonzero
+      by blast
+  qed
+qed
+
+lemma brc_x_equation_extended:
+  fixes x :: "rat mat"
+  fixes xv1 :: rat
+  shows
+    "(∑i ∈ {0..<𝗏}.
+       (∑h ∈ {0..<𝗏}.
+          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+       + of_int (int (𝗄 - Λ)) * xv1^2
+     =
+       of_int (int Λ) *
+         (∑j ∈ {0..<𝗏}. x $$ (j,0))^2
+       + of_int (int (𝗄 - Λ)) *
+         ((∑j ∈ {0..<𝗏}. (x $$ (j,0))^2) + xv1^2)"
+proof -
+  have base:
+    "(∑i ∈ {0..<𝗏}.
+       (∑h ∈ {0..<𝗏}.
+          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+     =
+       of_int (int Λ) *
+         (∑j ∈ {0..<𝗏}. x $$ (j,0))^2
+       + of_int (int (𝗄 - Λ)) *
+         (∑j ∈ {0..<𝗏}. (x $$ (j,0))^2)"
+    using brc_x_equation[of x] .
+
+  show ?thesis
+    using base
+    by (simp add: algebra_simps)
+qed
+
+definition brc_extend_x :: "rat mat ⇒ rat ⇒ rat mat" where
+  "brc_extend_x x xv1 =
+     mat (𝗏 + 1) 1
+       (λ(i,j). if i < 𝗏 then x $$ (i,0) else xv1)"
+
+lemma brc_extend_x_old:
+  assumes "i < 𝗏"
+  shows "brc_extend_x x xv1 $$ (i,0) = x $$ (i,0)"
+  using assms
+  unfolding brc_extend_x_def
+  by simp
+
+lemma brc_extend_x_last:
+  shows "brc_extend_x x xv1 $$ (𝗏,0) = xv1"
+  unfolding brc_extend_x_def
+  by simp
+
+lemma brc_extend_x_sqsum:
+  "(∑i∈{0..<𝗏 + 1}.
+      (brc_extend_x x xv1 $$ (i,0))^2)
+   =
+   (∑i∈{0..<𝗏}. (x $$ (i,0))^2) + xv1^2"
+proof -
+  have split:
+    "{0..<𝗏 + 1} = {0..<𝗏} ∪ {𝗏}"
+    by auto
+
+  have disj:
+    "{0..<𝗏} ∩ {𝗏} = {}"
+    by auto
+
+  have
+    "(∑i∈{0..<𝗏 + 1}.
+        (brc_extend_x x xv1 $$ (i,0))^2)
+     =
+     (∑i∈{0..<𝗏}.
+        (brc_extend_x x xv1 $$ (i,0))^2)
+       + (brc_extend_x x xv1 $$ (𝗏,0))^2"
+    using split disj
+    by (simp add: sum.union_disjoint)
+
+  also have
+    "... =
+     (∑i∈{0..<𝗏}. (x $$ (i,0))^2) + xv1^2"
+    using brc_extend_x_old brc_extend_x_last
+    by (intro arg_cong2[where f="(+)"]) auto
+
+  finally show ?thesis .
+qed
+
+lemma brc_v_plus_one_four_blocks:
+  assumes v_form: "𝗏 = 4 * w - 1"
+  assumes w_pos: "0 < w"
+  shows "𝗏 + 1 = 4 * w"
+  using v_form w_pos
+  by simp
+
+lemma sum_four_blocks:
+  fixes f :: "nat ⇒ rat"
+  shows
+    "(∑i∈{0..<4*w}. f i)
+     =
+     (∑h∈{0..<w}.
+       (f (4*h) + f (4*h+1) + f (4*h+2) + f (4*h+3)))"
+proof (induction w)
+  case 0
+  then show ?case
+    by simp
+next
+  case (Suc w)
+
+  have split:
+    "{0..<4 * Suc w} =
+     {0..<4*w} ∪ {4*w, 4*w+1, 4*w+2, 4*w+3}"
+    by auto
+
+  have disj:
+    "{0..<4*w} ∩ {4*w, 4*w+1, 4*w+2, 4*w+3} = {}"
+    by auto
+
+  show ?case
+    unfolding split
+    using disj Suc.IH
+    by (simp add: sum.union_disjoint algebra_simps)
+qed
+
+lemma brc_x_equation_extended_vector:
+  fixes x :: "rat mat"
+  fixes xv1 :: rat
+  shows
+    "(∑i ∈ {0..<𝗏}.
+       (∑h ∈ {0..<𝗏}.
+          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+       + of_int (int (𝗄 - Λ)) * xv1^2
+     =
+       of_int (int Λ) *
+         (∑j ∈ {0..<𝗏}. x $$ (j,0))^2
+       + of_int (int (𝗄 - Λ)) *
+         (∑j ∈ {0..<𝗏 + 1}.
+            (brc_extend_x x xv1 $$ (j,0))^2)"
+proof -
+  have ext:
+    "(∑j ∈ {0..<𝗏 + 1}.
+       (brc_extend_x x xv1 $$ (j,0))^2)
+     =
+     (∑j ∈ {0..<𝗏}. (x $$ (j,0))^2) + xv1^2"
+    using brc_extend_x_sqsum[of x xv1] .
+
+  have base:
+    "(∑i ∈ {0..<𝗏}.
+       (∑h ∈ {0..<𝗏}.
+          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+       + of_int (int (𝗄 - Λ)) * xv1^2
+     =
+       of_int (int Λ) *
+         (∑j ∈ {0..<𝗏}. x $$ (j,0))^2
+       + of_int (int (𝗄 - Λ)) *
+         ((∑j ∈ {0..<𝗏}. (x $$ (j,0))^2) + xv1^2)"
+    using brc_x_equation_extended[of x xv1] .
+
+  show ?thesis
+    using base ext
+    by simp
+qed
+
+lemma brc_extend_x_sqsum_blocks:
+  assumes v_form: "𝗏 = 4 * w - 1"
+  assumes w_pos: "0 < w"
+  shows
+    "(∑i∈{0..<𝗏 + 1}.
+       (brc_extend_x x xv1 $$ (i,0))^2)
+     =
+     (∑h∈{0..<w}.
+       ((brc_extend_x x xv1 $$ (4*h,0))^2 +
+        (brc_extend_x x xv1 $$ (4*h+1,0))^2 +
+        (brc_extend_x x xv1 $$ (4*h+2,0))^2 +
+        (brc_extend_x x xv1 $$ (4*h+3,0))^2))"
+proof -
+  have size:
+    "𝗏 + 1 = 4 * w"
+    using brc_v_plus_one_four_blocks[OF v_form w_pos] .
+
+  have blocks:
+    "(∑i∈{0..<4*w}.
+       (brc_extend_x x xv1 $$ (i,0))^2)
+     =
+     (∑h∈{0..<w}.
+       ((brc_extend_x x xv1 $$ (4*h,0))^2 +
+        (brc_extend_x x xv1 $$ (4*h+1,0))^2 +
+        (brc_extend_x x xv1 $$ (4*h+2,0))^2 +
+        (brc_extend_x x xv1 $$ (4*h+3,0))^2))"
+    using sum_four_blocks[
+      of "λi. (brc_extend_x x xv1 $$ (i,0))^2" w] .
+
+  from blocks show ?thesis
+    using size
+    by simp
+qed
+
+lemma brc_extend_x_transformed_blocks:
+  fixes a b c d :: nat
+  fixes x :: "rat mat"
+  fixes xv1 :: rat
+  assumes v_form: "𝗏 = 4 * w - 1"
+  assumes w_pos: "0 < w"
+  assumes four_sq:
+    "𝗄 - Λ = a^2 + b^2 + c^2 + d^2"
+  shows
+    "of_nat (𝗄 - Λ) *
+       (∑i∈{0..<𝗏 + 1}.
+          (brc_extend_x x xv1 $$ (i,0))^2)
+     =
+     (∑h∈{0..<w}.
+        y_block_sqsum a b c d
+          (brc_extend_x x xv1) h)"
+proof -
+  have blocks:
+    "(∑i∈{0..<𝗏 + 1}.
+       (brc_extend_x x xv1 $$ (i,0))^2)
+     =
+     (∑h∈{0..<w}.
+        x_block_sqsum (brc_extend_x x xv1) h)"
+  proof -
+    have split:
+      "(∑i∈{0..<𝗏 + 1}.
+         (brc_extend_x x xv1 $$ (i,0))^2)
+       =
+       (∑h∈{0..<w}.
+         ((brc_extend_x x xv1 $$ (4*h,0))^2 +
+          (brc_extend_x x xv1 $$ (4*h+1,0))^2 +
+          (brc_extend_x x xv1 $$ (4*h+2,0))^2 +
+          (brc_extend_x x xv1 $$ (4*h+3,0))^2))"
+      using brc_extend_x_sqsum_blocks[
+        OF v_form w_pos, of x xv1] .
+
+    show ?thesis
+      using split
+      unfolding x_block_sqsum_def
+      by simp
+  qed
+
+  have block_transform:
+    "⋀h. h ∈ {0..<w} ⟹
+       of_nat (𝗄 - Λ) *
+         x_block_sqsum (brc_extend_x x xv1) h
+       =
+       y_block_sqsum a b c d
+         (brc_extend_x x xv1) h"
+    using y_block_sqsum_identity[
+      OF four_sq, of "brc_extend_x x xv1"]
+    by simp
+
+  have
+    "of_nat (𝗄 - Λ) *
+       (∑i∈{0..<𝗏 + 1}.
+          (brc_extend_x x xv1 $$ (i,0))^2)
+     =
+     of_nat (𝗄 - Λ) *
+       (∑h∈{0..<w}.
+          x_block_sqsum (brc_extend_x x xv1) h)"
+    using blocks
+    by simp
+
+  also have
+    "... =
+     (∑h∈{0..<w}.
+        of_nat (𝗄 - Λ) *
+          x_block_sqsum (brc_extend_x x xv1) h)"
+    by (simp add: sum_distrib_left)
+
+  also have
+    "... =
+     (∑h∈{0..<w}.
+        y_block_sqsum a b c d
+          (brc_extend_x x xv1) h)"
+    using block_transform
+    by simp
+
+  finally show ?thesis .
+qed
+
+lemma brc_x_equation_minus_transformed:
+  fixes a b c d :: nat
+  fixes x :: "rat mat"
+  fixes xv1 :: rat
+  assumes v_form: "𝗏 = 4 * w - 1"
+  assumes w_pos: "0 < w"
+  assumes four_sq:
+    "𝗄 - Λ = a^2 + b^2 + c^2 + d^2"
+  shows
+    "(∑i∈{0..<𝗏}.
+       (∑h∈{0..<𝗏}.
+          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+       + of_nat (𝗄 - Λ) * xv1^2
+     =
+       of_nat Λ *
+         (∑j∈{0..<𝗏}. x $$ (j,0))^2
+       +
+       (∑h∈{0..<w}.
+          y_block_sqsum a b c d
+            (brc_extend_x x xv1) h)"
+proof -
+  have base:
+    "(∑i∈{0..<𝗏}.
+       (∑h∈{0..<𝗏}.
+          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+       + of_nat (𝗄 - Λ) * xv1^2
+     =
+       of_nat Λ *
+         (∑j∈{0..<𝗏}. x $$ (j,0))^2
+       +
+       of_nat (𝗄 - Λ) *
+         (∑j∈{0..<𝗏 + 1}.
+            (brc_extend_x x xv1 $$ (j,0))^2)"
+    using brc_x_equation_extended_vector[of x xv1]
+    by simp
+
+  have transformed:
+    "of_nat (𝗄 - Λ) *
+       (∑j∈{0..<𝗏 + 1}.
+          (brc_extend_x x xv1 $$ (j,0))^2)
+     =
+       (∑h∈{0..<w}.
+          y_block_sqsum a b c d
+            (brc_extend_x x xv1) h)"
+    using brc_extend_x_transformed_blocks[
+      OF v_form w_pos four_sq, of x xv1] .
+
+  show ?thesis
+    using base transformed
+    by simp
+qed
+
+definition brc_minus_prefix_eliminated ::
+  "nat ⇒ nat ⇒ nat ⇒ nat ⇒ rat mat ⇒ rat ⇒ nat ⇒ bool" where
+  "brc_minus_prefix_eliminated a b c d x xv1 q ⟷
+     (∀t. t < q ⟶
+        y_block_sqsum a b c d (brc_extend_x x xv1) t =
+        (∑j∈{0..<4}.
+          (∑r∈{0..<4 * Suc t}.
+            of_int
+              (N $$ (4 * Suc t-r-1,
+                      4 * Suc t-j-1)) *
+            brc_extend_x x xv1 $$ (4 * Suc t-r-1,0))^2))"
+
+definition brc_minus_prefix_good ::
+  "nat ⇒ nat ⇒ nat ⇒ nat ⇒ rat mat ⇒ rat ⇒ nat ⇒ bool" where
+  "brc_minus_prefix_good a b c d x xv1 q ⟷
+     brc_minus_prefix_eliminated a b c d x xv1 q ∧
+     (∀h j. h < q ⟶ j < 4 ⟶
+        (∑r∈{4 * Suc h..<𝗏}.
+          of_int (N $$ (r,4*h+j)) * x $$ (r,0)) = 0)"
+
+lemma brc_minus_prefix_eliminated_base:
+  "brc_minus_prefix_eliminated a b c d x xv1 0"
+  unfolding brc_minus_prefix_eliminated_def
+  by simp
+
+lemma brc_minus_prefix_good_base:
+  "brc_minus_prefix_good a b c d x xv1 0"
+  unfolding brc_minus_prefix_good_def
+  using brc_minus_prefix_eliminated_base
+  by simp
+
+lemma brc_minus_prefix_sum_blocks:
+  assumes prefix:
+    "brc_minus_prefix_eliminated a b c d x xv1 q"
+  shows
+    "(∑h∈{0..<q}.
+        y_block_sqsum a b c d
+          (brc_extend_x x xv1) h)
+     =
+     (∑h∈{0..<q}.
+        (∑j∈{0..<4}.
+          (∑r∈{0..<4 * Suc h}.
+            of_int
+              (N $$ (4 * Suc h-r-1,
+                      4 * Suc h-j-1)) *
+            brc_extend_x x xv1 $$
+              (4 * Suc h-r-1,0))^2))"
+  using prefix
+  unfolding brc_minus_prefix_eliminated_def
+  by simp
+
+lemma brc_minus_prefix_eliminated_step:
+  assumes prefix:
+    "brc_minus_prefix_eliminated a b c d x xv1 q"
+  assumes q_bound:
+    "4 * q ≤ 𝗏"
+  assumes before:
+    "∀i. i < 4*q ⟶ i < 𝗏 ⟶
+       x' $$ (i,0) = x $$ (i,0)"
+  assumes local:
+    "y_block_sqsum a b c d
+       (brc_extend_x x' xv1) q
+     =
+     (∑j∈{0..<4}.
+       (∑r∈{0..<4 * Suc q}.
+         of_int
+           (N $$ (4 * Suc q-r-1,
+                   4 * Suc q-j-1)) *
+         brc_extend_x x' xv1 $$
+           (4 * Suc q-r-1,0))^2)"
+  shows
+    "brc_minus_prefix_eliminated
+       a b c d x' xv1 (Suc q)"
+proof -
+  show ?thesis
+    unfolding brc_minus_prefix_eliminated_def
+  proof (intro allI impI)
+    fix t
+    assume t_lt: "t < Suc q"
+
+    show
+      "y_block_sqsum a b c d
+         (brc_extend_x x' xv1) t
+       =
+       (∑j∈{0..<4}.
+         (∑r∈{0..<4 * Suc t}.
+           of_int
+             (N $$ (4 * Suc t-r-1,
+                     4 * Suc t-j-1)) *
+           brc_extend_x x' xv1 $$
+             (4 * Suc t-r-1,0))^2)"
+    proof (cases "t < q")
+      case True
+
+      have block_bound:
+        "4 * Suc t ≤ 4 * q"
+        using True
+        by simp
+
+      have agree:
+        "⋀i. i < 4 * Suc t ⟹
+          brc_extend_x x' xv1 $$ (i,0) =
+          brc_extend_x x xv1 $$ (i,0)"
+      proof -
+        fix i
+        assume i_lt: "i < 4 * Suc t"
+
+        have i_lt_4q:
+          "i < 4*q"
+          using i_lt block_bound
+          by simp
+
+        have i_lt_v:
+          "i < 𝗏"
+          using i_lt_4q q_bound
+          by simp
+
+        have xx:
+          "x' $$ (i,0) = x $$ (i,0)"
+          using before i_lt_4q i_lt_v
+          by blast
+
+        show
+          "brc_extend_x x' xv1 $$ (i,0) =
+           brc_extend_x x xv1 $$ (i,0)"
+          using xx i_lt_v
+          unfolding brc_extend_x_def
+          by simp
+      qed
+
+      have old_block:
+        "y_block_sqsum a b c d
+           (brc_extend_x x' xv1) t
+         =
+         y_block_sqsum a b c d
+           (brc_extend_x x xv1) t"
+        unfolding y_block_sqsum_def
+        using agree
+        by simp
+
+      have old_rhs:
+        "(∑j∈{0..<4}.
+          (∑r∈{0..<4 * Suc t}.
+            of_int
+              (N $$ (4 * Suc t-r-1,
+                      4 * Suc t-j-1)) *
+            brc_extend_x x' xv1 $$
+              (4 * Suc t-r-1,0))^2)
+         =
+         (∑j∈{0..<4}.
+          (∑r∈{0..<4 * Suc t}.
+            of_int
+              (N $$ (4 * Suc t-r-1,
+                      4 * Suc t-j-1)) *
+            brc_extend_x x xv1 $$
+              (4 * Suc t-r-1,0))^2)"
+      proof -
+        have index_bound:
+          "⋀r. r ∈ {0..<4 * Suc t} ⟹
+             4 * Suc t-r-1 < 4 * Suc t"
+          by simp
+
+        show ?thesis
+          using agree index_bound
+          by (intro sum.cong) auto
+      qed
+
+      have old:
+        "y_block_sqsum a b c d
+           (brc_extend_x x xv1) t
+         =
+         (∑j∈{0..<4}.
+           (∑r∈{0..<4 * Suc t}.
+             of_int
+               (N $$ (4 * Suc t-r-1,
+                       4 * Suc t-j-1)) *
+             brc_extend_x x xv1 $$
+               (4 * Suc t-r-1,0))^2)"
+        using prefix True
+        unfolding brc_minus_prefix_eliminated_def
+        by blast
+
+      show ?thesis
+        using old_block old_rhs old
+        by simp
+    next
+      case False
+
+      have tq:
+        "t = q"
+        using t_lt False
+        by simp
+
+      show ?thesis
+        using local
+        unfolding tq
+        by simp
+    qed
+  qed
+qed
+
+definition brc_minus_local_step ::
+  "nat ⇒ nat ⇒ nat ⇒ nat ⇒ rat ⇒ nat ⇒ bool" where
+  "brc_minus_local_step a b c d xv1 q ⟷
+     (∀x :: rat mat.
+       4 * q ≤ 𝗏 ⟶
+       (∃x' :: rat mat.
+          (∀i. i < 4*q ⟶ i < 𝗏 ⟶
+               x' $$ (i,0) = x $$ (i,0)) ∧
+          y_block_sqsum a b c d
+            (brc_extend_x x' xv1) q
+          =
+          (∑j∈{0..<4}.
+            (∑r∈{0..<4 * Suc q}.
+              of_int
+                (N $$ (4 * Suc q-r-1,
+                        4 * Suc q-j-1)) *
+              brc_extend_x x' xv1 $$
+                (4 * Suc q-r-1,0))^2)))"
+
+lemma brc_minus_prefix_step_exists:
+  assumes prefix:
+    "brc_minus_prefix_eliminated a b c d x xv1 q"
+  assumes q_bound:
+    "4 * q ≤ 𝗏"
+  assumes step:
+    "brc_minus_local_step a b c d xv1 q"
+  shows
+    "∃x'.
+       brc_minus_prefix_eliminated
+         a b c d x' xv1 (Suc q)"
+proof -
+  obtain x' where before:
+    "∀i. i < 4*q ⟶ i < 𝗏 ⟶
+         x' $$ (i,0) = x $$ (i,0)"
+    and local:
+    "y_block_sqsum a b c d
+       (brc_extend_x x' xv1) q
+     =
+     (∑j∈{0..<4}.
+       (∑r∈{0..<4 * Suc q}.
+         of_int
+           (N $$ (4 * Suc q-r-1,
+                   4 * Suc q-j-1)) *
+         brc_extend_x x' xv1 $$
+           (4 * Suc q-r-1,0))^2)"
+    using step q_bound
+    unfolding brc_minus_local_step_def
+    by blast
+
+  have
+    "brc_minus_prefix_eliminated
+       a b c d x' xv1 (Suc q)"
+    using brc_minus_prefix_eliminated_step[
+      OF prefix q_bound before local] .
+
+  then show ?thesis
+    by blast
+qed
+
+lemma brc_minus_prefix_exists_upto:
+  assumes steps:
+    "∀q<Q. brc_minus_local_step a b c d xv1 q"
+  assumes bound:
+    "4 * Q ≤ 𝗏"
+  shows
+    "∃x :: rat mat.
+       brc_minus_prefix_eliminated
+         a b c d x xv1 Q"
+  using steps bound
+proof (induction Q)
+  case 0
+
+  show ?case
+    using brc_minus_prefix_eliminated_base
+    by blast
+next
+  case (Suc Q)
+
+  have steps_Q:
+    "∀q<Q. brc_minus_local_step a b c d xv1 q"
+    using Suc.prems(1)
+    by simp
+
+  have bound_Q:
+    "4 * Q ≤ 𝗏"
+    using Suc.prems(2)
+    by simp
+
+  obtain x :: "rat mat" where prefix:
+    "brc_minus_prefix_eliminated
+       a b c d x xv1 Q"
+    using Suc.IH[OF steps_Q bound_Q]
+    by blast
+
+  have local_Q:
+    "brc_minus_local_step a b c d xv1 Q"
+    using Suc.prems(1)
+    by simp
+
+  obtain x' :: "rat mat" where next_prefix:
+    "brc_minus_prefix_eliminated
+       a b c d x' xv1 (Suc Q)"
+    using brc_minus_prefix_step_exists[
+      OF prefix bound_Q local_Q]
+    by blast
+
+  show ?case
+    using next_prefix
+    by blast
+qed
+
+lemma choose_y_linear_square:
+  fixes A R :: rat
+  shows "∃y :: rat. (A*y + R)^2 = y^2"
+proof (cases "A = 1")
+  case True
+
+  let ?y = "-R / 2"
+
+  have eq:
+    "A * ?y + R = - ?y"
+  proof -
+    subst A
+    show "1 * (-R / 2) + R = - (-R / 2)"
+      by ring
+  qed
+
+  have sq:
+    "(A * ?y + R)^2 = ?y^2"
+    using eq
+    by simp
+
+  show ?thesis
+    using sq
+    by blast
+next
+  case False
+
+  have denom:
+    "1 - A ≠ 0"
+    using False
+    by simp
+
+  let ?y = "R / (1 - A)"
+
+  have div_eq:
+    "?y * (1 - A) = R"
+    using denom
+    by simp
+
+  have eq:
+    "A * ?y + R = ?y"
+    using div_eq
+    by linarith
+
+  have sq:
+    "(A * ?y + R)^2 = ?y^2"
+    using eq
+    by simp
+
+  show ?thesis
+    using sq
+    by blast
+qed
+
 end
 end
