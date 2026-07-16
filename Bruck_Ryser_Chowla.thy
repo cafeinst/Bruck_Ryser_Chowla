@@ -7156,23 +7156,30 @@ lemma choose_y_linear_square:
 proof (cases "A = 1")
   case True
 
-  let ?y = "-R / 2"
-
-  have eq:
-    "A * ?y + R = - ?y"
-  proof -
-    subst A
-    show "1 * (-R / 2) + R = - (-R / 2)"
-      by ring
+  have exists_y:
+    "∃y :: rat. 2 * y = -R"
+  proof
+    show "2 * (-R / 2) = -R"
+      by simp
   qed
 
-  have sq:
-    "(A * ?y + R)^2 = ?y^2"
-    using eq
+  obtain y :: rat where hy:
+    "2 * y = -R"
+    using exists_y
+    by blast
+
+  have linear:
+    "A * y + R = -y"
+    using True hy
+    by (simp add: algebra_simps)
+
+  have square:
+    "(A * y + R)^2 = y^2"
+    using linear
     by simp
 
   show ?thesis
-    using sq
+    using square
     by blast
 next
   case False
@@ -7182,26 +7189,550 @@ next
     using False
     by simp
 
-  let ?y = "R / (1 - A)"
+  have exists_y:
+    "∃y :: rat. (1 - A) * y = R"
+  proof
+    show "(1 - A) * (R / (1 - A)) = R"
+      using denom
+      by simp
+  qed
 
-  have div_eq:
-    "?y * (1 - A) = R"
-    using denom
-    by simp
+  obtain y :: rat where hy:
+    "(1 - A) * y = R"
+    using exists_y
+    by blast
 
-  have eq:
-    "A * ?y + R = ?y"
-    using div_eq
-    by linarith
+  have linear:
+    "A * y + R = y"
+    using hy
+    by (simp add: algebra_simps)
 
-  have sq:
-    "(A * ?y + R)^2 = ?y^2"
-    using eq
+  have square:
+    "(A * y + R)^2 = y^2"
+    using linear
     by simp
 
   show ?thesis
-    using sq
+    using square
     by blast
+qed
+
+definition brc_linear_coeff ::
+  "nat ⇒ nat ⇒ nat ⇒ nat ⇒ nat ⇒ nat ⇒ nat ⇒ rat" where
+  "brc_linear_coeff a b c d m i j =
+    (let D = of_nat (a^2 + b^2 + c^2 + d^2) :: rat in
+     if j = 0 then
+       of_int (N $$ (m-4,m-i-1)) * of_nat a / D +
+       of_int (N $$ (m-3,m-i-1)) * of_nat b / D +
+       of_int (N $$ (m-2,m-i-1)) * of_nat c / D +
+       of_int (N $$ (m-1,m-i-1)) * of_nat d / D
+     else if j = 1 then
+       - of_int (N $$ (m-4,m-i-1)) * of_nat b / D +
+         of_int (N $$ (m-3,m-i-1)) * of_nat a / D -
+         of_int (N $$ (m-2,m-i-1)) * of_nat d / D +
+         of_int (N $$ (m-1,m-i-1)) * of_nat c / D
+     else if j = 2 then
+       - of_int (N $$ (m-4,m-i-1)) * of_nat c / D +
+         of_int (N $$ (m-3,m-i-1)) * of_nat d / D +
+         of_int (N $$ (m-2,m-i-1)) * of_nat a / D -
+         of_int (N $$ (m-1,m-i-1)) * of_nat b / D
+     else
+       - of_int (N $$ (m-4,m-i-1)) * of_nat d / D -
+         of_int (N $$ (m-3,m-i-1)) * of_nat c / D +
+         of_int (N $$ (m-2,m-i-1)) * of_nat b / D +
+         of_int (N $$ (m-1,m-i-1)) * of_nat a / D)"
+
+lemma brc_linear_coeff_0:
+  "brc_linear_coeff a b c d m i 0 =
+    (let D = of_nat (a^2 + b^2 + c^2 + d^2) :: rat in
+       of_int (N $$ (m-4,m-i-1)) * of_nat a / D +
+       of_int (N $$ (m-3,m-i-1)) * of_nat b / D +
+       of_int (N $$ (m-2,m-i-1)) * of_nat c / D +
+       of_int (N $$ (m-1,m-i-1)) * of_nat d / D)"
+  unfolding brc_linear_coeff_def
+  by simp
+
+lemma brc_linear_coeff_1:
+  "brc_linear_coeff a b c d m i 1 =
+    (let D = of_nat (a^2 + b^2 + c^2 + d^2) :: rat in
+       - of_int (N $$ (m-4,m-i-1)) * of_nat b / D +
+         of_int (N $$ (m-3,m-i-1)) * of_nat a / D -
+         of_int (N $$ (m-2,m-i-1)) * of_nat d / D +
+         of_int (N $$ (m-1,m-i-1)) * of_nat c / D)"
+  unfolding brc_linear_coeff_def
+  by simp
+
+lemma brc_linear_coeff_2:
+  "brc_linear_coeff a b c d m i 2 =
+    (let D = of_nat (a^2 + b^2 + c^2 + d^2) :: rat in
+       - of_int (N $$ (m-4,m-i-1)) * of_nat c / D +
+         of_int (N $$ (m-3,m-i-1)) * of_nat d / D +
+         of_int (N $$ (m-2,m-i-1)) * of_nat a / D -
+         of_int (N $$ (m-1,m-i-1)) * of_nat b / D)"
+  unfolding brc_linear_coeff_def
+  by simp
+
+lemma brc_linear_coeff_3:
+  "brc_linear_coeff a b c d m i 3 =
+    (let D = of_nat (a^2 + b^2 + c^2 + d^2) :: rat in
+       - of_int (N $$ (m-4,m-i-1)) * of_nat d / D -
+         of_int (N $$ (m-3,m-i-1)) * of_nat c / D +
+         of_int (N $$ (m-2,m-i-1)) * of_nat b / D +
+         of_int (N $$ (m-1,m-i-1)) * of_nat a / D)"
+  unfolding brc_linear_coeff_def
+  by simp
+
+definition brc_linear_tail ::
+  "rat mat ⇒ nat ⇒ nat ⇒ rat" where
+  "brc_linear_tail x m i =
+    (∑h∈{4..<m}.
+       of_int (N $$ (m-h-1,m-i-1)) *
+       x $$ (m-h-1,0))"
+
+lemma linear_comb_of_y_explicit:
+  fixes a b c d :: nat
+  fixes x :: "rat mat"
+  fixes x0 x1 x2 x3 :: rat
+  fixes i m :: nat
+  assumes four_sq:
+    "a^2 + b^2 + c^2 + d^2 = 𝗄 - Λ"
+  assumes m_v:
+    "m ≤ 𝗏"
+  assumes m_gt3:
+    "3 < m"
+  assumes i4:
+    "i ∈ {0..<4}"
+  assumes x0_def:
+    "x0 = x $$ (m - 4, 0)"
+  assumes x1_def:
+    "x1 = x $$ (m - 3, 0)"
+  assumes x2_def:
+    "x2 = x $$ (m - 2, 0)"
+  assumes x3_def:
+    "x3 = x $$ (m - 1, 0)"
+  shows
+    "(∑h∈{0..<m}.
+       of_int (N $$ (m - h - 1, m - i - 1)) *
+       x $$ (m - h - 1, 0))
+     =
+       brc_linear_coeff a b c d m i 0 *
+         one_of (y_of ((a,b,c,d),(x0,x1,x2,x3))) +
+       brc_linear_coeff a b c d m i 1 *
+         two_of (y_of ((a,b,c,d),(x0,x1,x2,x3))) +
+       brc_linear_coeff a b c d m i 2 *
+         three_of (y_of ((a,b,c,d),(x0,x1,x2,x3))) +
+       brc_linear_coeff a b c d m i 3 *
+         four_of (y_of ((a,b,c,d),(x0,x1,x2,x3))) +
+       brc_linear_tail x m i"
+proof -
+  let ?D =
+    "of_nat (a^2 + b^2 + c^2 + d^2) :: rat"
+
+  let ?y0 =
+    "one_of (y_of ((a,b,c,d),(x0,x1,x2,x3)))"
+
+  let ?y1 =
+    "two_of (y_of ((a,b,c,d),(x0,x1,x2,x3)))"
+
+  let ?y2 =
+    "three_of (y_of ((a,b,c,d),(x0,x1,x2,x3)))"
+
+  let ?y3 =
+    "four_of (y_of ((a,b,c,d),(x0,x1,x2,x3)))"
+
+  have nz:
+    "a^2 + b^2 + c^2 + d^2 ≠ 0"
+  proof -
+    have diff_pos:
+      "0 < 𝗄 - Λ"
+      using blocksize_gt_index
+      by simp
+
+    show ?thesis
+      using four_sq diff_pos
+      by simp
+  qed
+
+  have key:
+    "y_inv_reversible
+       (y_reversible ((a,b,c,d),(x0,x1,x2,x3)))
+     =
+     ((a,b,c,d),(x0,x1,x2,x3))"
+    using y_inverses_part_1[OF nz, of x0 x1 x2 x3] .
+
+  have x0_inv:
+    "x0 =
+       (of_nat a * ?y0 -
+        of_nat b * ?y1 -
+        of_nat c * ?y2 -
+        of_nat d * ?y3) / ?D"
+    using key
+    by simp
+
+  have x1_inv:
+    "x1 =
+       (of_nat b * ?y0 +
+        of_nat a * ?y1 +
+        of_nat d * ?y2 -
+        of_nat c * ?y3) / ?D"
+    using key
+    by simp
+
+  have x2_raw:
+    "x2 =
+       (of_nat c * ?y0 +
+        of_nat a * ?y2 +
+        of_nat b * ?y3 -
+        of_nat d * ?y1) / ?D"
+    using key
+    by simp
+
+  have x2_inv:
+    "x2 =
+       (of_nat c * ?y0 -
+        of_nat d * ?y1 +
+        of_nat a * ?y2 +
+        of_nat b * ?y3) / ?D"
+    using x2_raw
+    by (simp add: algebra_simps)
+
+  have x3_raw:
+    "x3 =
+       (of_nat d * ?y0 +
+        of_nat c * ?y1 +
+        of_nat a * ?y3 -
+        of_nat b * ?y2) / ?D"
+    using key
+    by simp
+
+  have x3_inv:
+    "x3 =
+       (of_nat d * ?y0 +
+        of_nat c * ?y1 -
+        of_nat b * ?y2 +
+        of_nat a * ?y3) / ?D"
+    using x3_raw
+    by (simp add: algebra_simps)
+
+  have interval_split:
+    "{0..<m} = {0..<4} ∪ {4..<m}"
+    using m_gt3
+    by auto
+
+  have interval_disjoint:
+    "{0..<4} ∩ {4..<m} = {}"
+    by auto
+
+  have sum_split:
+    "(∑h∈{0..<m}.
+       of_int (N $$ (m - h - 1, m - i - 1)) *
+       x $$ (m - h - 1, 0))
+     =
+     (∑h∈{0..<4}.
+       of_int (N $$ (m - h - 1, m - i - 1)) *
+       x $$ (m - h - 1, 0))
+     +
+     (∑h∈{4..<m}.
+       of_int (N $$ (m - h - 1, m - i - 1)) *
+       x $$ (m - h - 1, 0))"
+    using interval_split interval_disjoint
+    by (simp add: sum.union_disjoint)
+
+  have first_four:
+    "(∑h∈{0..<4}.
+       of_int (N $$ (m - h - 1, m - i - 1)) *
+       x $$ (m - h - 1, 0))
+     =
+       of_int (N $$ (m - 4, m - i - 1)) * x0 +
+       of_int (N $$ (m - 3, m - i - 1)) * x1 +
+       of_int (N $$ (m - 2, m - i - 1)) * x2 +
+       of_int (N $$ (m - 1, m - i - 1)) * x3"
+    using x0_def x1_def x2_def x3_def m_gt3
+    by (simp add: numeral.simps(2,3) algebra_simps)
+
+  have expanded:
+    "(∑h∈{0..<4}.
+       of_int (N $$ (m - h - 1, m - i - 1)) *
+       x $$ (m - h - 1, 0))
+     =
+       brc_linear_coeff a b c d m i 0 * ?y0 +
+       brc_linear_coeff a b c d m i 1 * ?y1 +
+       brc_linear_coeff a b c d m i 2 * ?y2 +
+       brc_linear_coeff a b c d m i 3 * ?y3"
+  proof -
+    have
+      "(∑h∈{0..<4}.
+         of_int (N $$ (m - h - 1, m - i - 1)) *
+         x $$ (m - h - 1, 0))
+       =
+         of_int (N $$ (m - 4, m - i - 1)) * x0 +
+         of_int (N $$ (m - 3, m - i - 1)) * x1 +
+         of_int (N $$ (m - 2, m - i - 1)) * x2 +
+         of_int (N $$ (m - 1, m - i - 1)) * x3"
+      using first_four .
+
+    also have
+      "... =
+       of_int (N $$ (m - 4, m - i - 1)) *
+         ((of_nat a * ?y0 -
+           of_nat b * ?y1 -
+           of_nat c * ?y2 -
+           of_nat d * ?y3) / ?D) +
+       of_int (N $$ (m - 3, m - i - 1)) *
+         ((of_nat b * ?y0 +
+           of_nat a * ?y1 +
+           of_nat d * ?y2 -
+           of_nat c * ?y3) / ?D) +
+       of_int (N $$ (m - 2, m - i - 1)) *
+         ((of_nat c * ?y0 -
+           of_nat d * ?y1 +
+           of_nat a * ?y2 +
+           of_nat b * ?y3) / ?D) +
+       of_int (N $$ (m - 1, m - i - 1)) *
+         ((of_nat d * ?y0 +
+           of_nat c * ?y1 -
+           of_nat b * ?y2 +
+           of_nat a * ?y3) / ?D)"
+      using x0_inv x1_inv x2_inv x3_inv
+      by simp
+
+    also have
+      "... =
+       brc_linear_coeff a b c d m i 0 * ?y0 +
+       brc_linear_coeff a b c d m i 1 * ?y1 +
+       brc_linear_coeff a b c d m i 2 * ?y2 +
+       brc_linear_coeff a b c d m i 3 * ?y3"
+    proof -
+      let ?A0 = "of_int (N $$ (m-4, m-i-1)) :: rat"
+      let ?A1 = "of_int (N $$ (m-3, m-i-1)) :: rat"
+      let ?A2 = "of_int (N $$ (m-2, m-i-1)) :: rat"
+      let ?A3 = "of_int (N $$ (m-1, m-i-1)) :: rat"
+
+      have part0:
+        "?A0 *
+           ((of_nat a * ?y0 -
+             of_nat b * ?y1 -
+             of_nat c * ?y2 -
+             of_nat d * ?y3) / ?D)
+         =
+           (?A0 * of_nat a / ?D) * ?y0 -
+           (?A0 * of_nat b / ?D) * ?y1 -
+           (?A0 * of_nat c / ?D) * ?y2 -
+           (?A0 * of_nat d / ?D) * ?y3"
+        by (simp only:
+            divide_inverse
+            diff_conv_add_uminus
+            distrib_left
+            distrib_right
+            minus_mult_left
+            minus_mult_right
+            mult.assoc mult.commute mult.left_commute
+            add.assoc add.commute add.left_commute)
+
+      have part1:
+        "?A1 *
+           ((of_nat b * ?y0 +
+             of_nat a * ?y1 +
+             of_nat d * ?y2 -
+             of_nat c * ?y3) / ?D)
+         =
+           (?A1 * of_nat b / ?D) * ?y0 +
+           (?A1 * of_nat a / ?D) * ?y1 +
+           (?A1 * of_nat d / ?D) * ?y2 -
+           (?A1 * of_nat c / ?D) * ?y3"
+        by (simp only:
+            divide_inverse
+            diff_conv_add_uminus
+            distrib_left
+            distrib_right
+            minus_mult_left
+            minus_mult_right
+            mult.assoc mult.commute mult.left_commute
+            add.assoc add.commute add.left_commute)
+
+      have part2:
+        "?A2 *
+           ((of_nat c * ?y0 -
+             of_nat d * ?y1 +
+             of_nat a * ?y2 +
+             of_nat b * ?y3) / ?D)
+         =
+           (?A2 * of_nat c / ?D) * ?y0 -
+           (?A2 * of_nat d / ?D) * ?y1 +
+           (?A2 * of_nat a / ?D) * ?y2 +
+           (?A2 * of_nat b / ?D) * ?y3"
+        by (simp only:
+            divide_inverse
+            diff_conv_add_uminus
+            distrib_left
+            distrib_right
+            minus_mult_left
+            minus_mult_right
+            mult.assoc mult.commute mult.left_commute
+            add.assoc add.commute add.left_commute)
+
+      have part3:
+        "?A3 *
+           ((of_nat d * ?y0 +
+             of_nat c * ?y1 -
+             of_nat b * ?y2 +
+             of_nat a * ?y3) / ?D)
+         =
+           (?A3 * of_nat d / ?D) * ?y0 +
+           (?A3 * of_nat c / ?D) * ?y1 -
+           (?A3 * of_nat b / ?D) * ?y2 +
+           (?A3 * of_nat a / ?D) * ?y3"
+        by (simp only:
+            divide_inverse
+            diff_conv_add_uminus
+            distrib_left
+            distrib_right
+            minus_mult_left
+            minus_mult_right
+            mult.assoc mult.commute mult.left_commute
+            add.assoc add.commute add.left_commute)
+
+      have group0:
+        "(?A0 * of_nat a / ?D +
+          ?A1 * of_nat b / ?D +
+          ?A2 * of_nat c / ?D +
+          ?A3 * of_nat d / ?D) * ?y0
+         =
+          (?A0 * of_nat a / ?D) * ?y0 +
+          (?A1 * of_nat b / ?D) * ?y0 +
+          (?A2 * of_nat c / ?D) * ?y0 +
+          (?A3 * of_nat d / ?D) * ?y0"
+        by (simp only:
+            divide_inverse
+            diff_conv_add_uminus
+            distrib_left distrib_right
+            minus_mult_left minus_mult_right
+            mult.assoc mult.commute mult.left_commute
+            add.assoc add.commute add.left_commute)
+
+      have group1:
+        "(- ?A0 * of_nat b / ?D +
+            ?A1 * of_nat a / ?D -
+            ?A2 * of_nat d / ?D +
+            ?A3 * of_nat c / ?D) * ?y1
+         =
+          - (?A0 * of_nat b / ?D) * ?y1 +
+            (?A1 * of_nat a / ?D) * ?y1 -
+            (?A2 * of_nat d / ?D) * ?y1 +
+            (?A3 * of_nat c / ?D) * ?y1"
+        by (simp only:
+            divide_inverse
+            diff_conv_add_uminus
+            distrib_left distrib_right
+            minus_mult_left minus_mult_right
+            mult.assoc mult.commute mult.left_commute
+            add.assoc add.commute add.left_commute)
+
+      have group2:
+        "(- ?A0 * of_nat c / ?D +
+            ?A1 * of_nat d / ?D +
+            ?A2 * of_nat a / ?D -
+            ?A3 * of_nat b / ?D) * ?y2
+         =
+          - (?A0 * of_nat c / ?D) * ?y2 +
+            (?A1 * of_nat d / ?D) * ?y2 +
+            (?A2 * of_nat a / ?D) * ?y2 -
+            (?A3 * of_nat b / ?D) * ?y2"
+        by (simp only:
+            divide_inverse
+            diff_conv_add_uminus
+            distrib_left distrib_right
+            minus_mult_left minus_mult_right
+            mult.assoc mult.commute mult.left_commute
+            add.assoc add.commute add.left_commute)
+
+      have group3:
+        "(- ?A0 * of_nat d / ?D -
+            ?A1 * of_nat c / ?D +
+            ?A2 * of_nat b / ?D +
+            ?A3 * of_nat a / ?D) * ?y3
+         =
+          - (?A0 * of_nat d / ?D) * ?y3 -
+            (?A1 * of_nat c / ?D) * ?y3 +
+            (?A2 * of_nat b / ?D) * ?y3 +
+            (?A3 * of_nat a / ?D) * ?y3"
+        by (simp only:
+            divide_inverse
+            diff_conv_add_uminus
+            distrib_left distrib_right
+            minus_mult_left minus_mult_right
+            mult.assoc mult.commute mult.left_commute
+            add.assoc add.commute add.left_commute)
+
+      have combined:
+        "?A0 *
+           ((of_nat a * ?y0 -
+             of_nat b * ?y1 -
+             of_nat c * ?y2 -
+             of_nat d * ?y3) / ?D) +
+         ?A1 *
+           ((of_nat b * ?y0 +
+             of_nat a * ?y1 +
+             of_nat d * ?y2 -
+             of_nat c * ?y3) / ?D) +
+         ?A2 *
+           ((of_nat c * ?y0 -
+             of_nat d * ?y1 +
+             of_nat a * ?y2 +
+             of_nat b * ?y3) / ?D) +
+         ?A3 *
+           ((of_nat d * ?y0 +
+             of_nat c * ?y1 -
+             of_nat b * ?y2 +
+             of_nat a * ?y3) / ?D)
+         =
+         (?A0 * of_nat a / ?D +
+          ?A1 * of_nat b / ?D +
+          ?A2 * of_nat c / ?D +
+          ?A3 * of_nat d / ?D) * ?y0 +
+         (- ?A0 * of_nat b / ?D +
+            ?A1 * of_nat a / ?D -
+            ?A2 * of_nat d / ?D +
+            ?A3 * of_nat c / ?D) * ?y1 +
+         (- ?A0 * of_nat c / ?D +
+            ?A1 * of_nat d / ?D +
+            ?A2 * of_nat a / ?D -
+            ?A3 * of_nat b / ?D) * ?y2 +
+         (- ?A0 * of_nat d / ?D -
+            ?A1 * of_nat c / ?D +
+            ?A2 * of_nat b / ?D +
+            ?A3 * of_nat a / ?D) * ?y3"
+        apply (subst part0)
+        apply (subst part1)
+        apply (subst part2)
+        apply (subst part3)
+        apply (subst group0)
+        apply (subst group1)
+        apply (subst group2)
+        apply (subst group3)
+        by (simp only:
+            diff_conv_add_uminus
+            minus_mult_left
+            minus_mult_right
+            add.assoc add.commute add.left_commute)
+
+      show ?thesis
+        using combined
+        by (simp only:
+            brc_linear_coeff_0
+            brc_linear_coeff_1
+            brc_linear_coeff_2
+            brc_linear_coeff_3
+            Let_def)
+    qed
+
+    finally show ?thesis .
+  qed
+
+  show ?thesis
+    using sum_split expanded
+    unfolding brc_linear_tail_def
+    by simp
 qed
 
 end
