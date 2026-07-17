@@ -12,9 +12,53 @@ text ‹The Bruck Ryser Chowla Theorem states the following:
 Let $(v,k,\Lambda)$ be a symmetric BIBD. If v is even, 
 then $k-\Lambda$ will be a perfect square. And if v is odd,
 then there will exist integers $(x,y,z) \neq (0,0,0)$ such that
-$x^2 = (k-Λ) y^2 = (-1)^{(v-1)/2}Λz^2$. The proof comes from 
+$x^2 = (k-Λ) y^2 + (-1)^{(v-1)/2}Λz^2$. The proof comes from 
 "Combinatorial Designs: Constructions and Analysis" by Douglas R.
 Stinson.›
+
+section ‹Proof outline›
+
+text ‹
+This theory formalizes the Bruck–Ryser–Chowla theorem for symmetric
+balanced incomplete block designs. The development is organized as follows.
+
+  1. Even order
+     The determinant of the incidence-matrix identity is used to prove
+     that K - Λ must be a perfect square when v is even.
+
+  2. The fundamental quadratic identity
+     The incidence-matrix equation is converted into an identity involving
+     the linear forms determined by the columns of the incidence matrix.
+
+  3. Four-square change of variables
+     A representation
+       K - Λ = a² + b² + c² + d²
+     is used to transform variables in blocks of four while preserving
+     their sum of squares.
+
+  4. Rational diagonal elimination
+     Successive rational substitutions eliminate linear-square terms.
+     The development proves that these substitutions preserve the relevant
+     diagonal quadratic form and retain a nontrivial solution.
+
+  5. The case v ≡ 1 (mod 4)
+     For v = 4w + 1, the transformed variables produce a nontrivial
+     rational solution of
+       x² = (K - Λ)y² + Λz².
+
+  6. The case v ≡ 3 (mod 4)
+     For v = 4w - 1, an additional coordinate is introduced. The same
+     elimination procedure produces a nontrivial rational solution of
+       x² = (K - Λ)y² - Λz².
+
+  7. Passage from rational to integer solutions
+     Denominators are cleared to turn each nontrivial rational solution
+     into a nontrivial integral solution.
+
+  8. Final odd-order theorem
+     The two congruence classes modulo four are combined, and the signs
+     are rewritten to obtain the standard Bruck–Ryser–Chowla equation.
+›
 
 context ordered_sym_bibd
 begin
@@ -151,6 +195,15 @@ qed
 end
 
 subsection ‹v is odd›
+
+text ‹
+The odd-order argument follows the classical ``rational equivalence''
+proof.  We first turn the incidence-matrix identity into an equality of
+quadratic forms.  A four-square identity then groups coordinates into
+blocks of four.  Finally, rational elimination removes the remaining
+linear forms one coordinate at a time.  The two possible residues of
+the order modulo four require slightly different terminal forms.
+›
 
 sublocale ordered_bibd ⊆ ordered_regular_pairwise_balance 𝒱s ℬs Λ 𝗋
   by unfold_locales
@@ -334,6 +387,16 @@ proof -
     using r_eq_k by simp
   finally show ?thesis .
 qed
+
+subsubsection ‹The four-square change of variables›
+
+text ‹
+The following maps are the rational change of coordinates associated with
+Euler's four-square identity.  The forward map multiplies a four-vector by
+the quaternionic matrix determined by @{term "(a,b,c,d)"}; the inverse map
+uses its transpose and divides by @{term "a^2 + b^2 + c^2 + d^2"}.
+Consequently the squared norm is multiplied by that sum of four squares.
+›
 
 fun y_reversible :: "((nat × nat × nat × nat) × (rat × rat × rat × rat)) ⇒ 
              ((nat × nat × nat × nat) × (rat × rat × rat × rat))" where
@@ -1271,6 +1334,17 @@ proof -
     using base transformed
     by simp
 qed
+
+subsubsection ‹Rational elimination of linear squares›
+
+text ‹
+This section isolates the algebraic elimination used in both odd-order
+cases.  At one stage a square of a linear form is matched against one
+diagonal coordinate.  The substitution cancels that coordinate, updates
+the coefficients of all remaining linear forms, and leaves the previously
+eliminated prefix equal to zero.  Iteration reduces the quadratic identity
+to its final two coordinates while preserving a nontrivial zero.
+›
 
 definition brc_match_y :: "rat ⇒ rat ⇒ rat" where
   "brc_match_y A R =
@@ -3055,6 +3129,17 @@ proof -
     by blast
 qed
 
+subsubsection ‹The case v = 4w + 1›
+
+text ‹
+For order @{term "4 * w + 1"}, the inverse four-square transformation
+reconstructs the original coordinates from a vector of new variables.
+The coefficient functions below express every incidence linear form, and
+the distinguished sum of coordinates, in those new variables.  Applying
+the generic elimination theorem gives the required rational solution with
+the plus sign.
+›
+
 definition brc_tuple_component ::
   "(rat × rat × rat × rat) ⇒ nat ⇒ rat" where
   "brc_tuple_component t j =
@@ -4661,6 +4746,15 @@ proof -
     using equation nonzero
     by blast
 qed
+
+subsubsection ‹The case v = 4w - 1›
+
+text ‹
+For order @{term "4 * w - 1"}, one auxiliary coordinate completes the
+coordinates to blocks of four.  Its diagonal coefficient has the opposite
+sign, which is exactly what produces the minus sign in the terminal
+Bruck--Ryser--Chowla equation.
+›
 
 definition brc_x_from_y_minus ::
   "nat ⇒ nat ⇒ nat ⇒ nat ⇒
@@ -6297,6 +6391,15 @@ proof -
     using w_pos form
     by blast
 qed
+
+subsubsection ‹Clearing denominators and assembling the theorem›
+
+text ‹
+The elimination argument naturally yields rational witnesses.  A common
+denominator converts them to integer witnesses; homogeneity of the
+quadratic equation preserves both the equality and nontriviality.  The
+final theorem then combines the two odd residue classes modulo four.
+›
 
 lemma rat_as_int_quotient:
   fixes r :: rat
