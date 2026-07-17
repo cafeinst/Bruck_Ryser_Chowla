@@ -163,11 +163,6 @@ proof -
     by simp
 qed
 
-text ‹
-Dividing the determinant identity by the nonzero block size expresses
-the relevant power of @{term "𝗄 - Λ"} as a rational square.
-›
-
 lemma determinant_quotient_square:
   "(det N)^2 / 𝗄^2 = (𝗄 - Λ)^(𝗏 - 1)"
 proof -
@@ -205,11 +200,6 @@ proof -
   then show ?thesis
     by (simp add: power_divide)
 qed
-
-text ‹
-Taking square roots shows that the corresponding power of
-@{term "sqrt (𝗄 - Λ)"} is rational.
-›
 
 lemma sqrt_block_difference_power_rational:
   "(sqrt (𝗄 - Λ))^(𝗏 - 1) ∈ ℚ"
