@@ -4,17 +4,22 @@
 
 theory Bruck_Ryser_Chowla imports
   Fishers_Inequality.Fishers_Inequality SumSquares.FourSquares Pell.Pell 
-  Van_der_Waerden.Digits
 begin 
 
-section ‹Bruck Ryser Chowla Theorem›
-text ‹The Bruck Ryser Chowla Theorem states the following:
-Let $(v,k,\Lambda)$ be a symmetric BIBD. If v is even, 
-then $k-\Lambda$ will be a perfect square. And if v is odd,
-then there will exist integers $(x,y,z) \neq (0,0,0)$ such that
-$x^2 = (k-Λ) y^2 + (-1)^{(v-1)/2}Λz^2$. The proof comes from 
-"Combinatorial Designs: Constructions and Analysis" by Douglas R.
-Stinson.›
+section ‹The Bruck–Ryser–Chowla theorem›
+
+text ‹
+The Bruck–Ryser–Chowla theorem gives necessary arithmetic conditions
+for the existence of a symmetric balanced incomplete block design with
+parameters v, k, and Λ.  If v is even, then k - Λ is a perfect square.
+If v is odd, then there exist integers x, y, and z, not all zero, such
+that
+
+  x² = (k - Λ)y² + (-1)^((v - 1) div 2) Λz².
+
+The formalization follows the proof presented by Douglas R. Stinson in
+\<^emph>‹Combinatorial Designs: Constructions and Analysis›.
+›
 
 section ‹Proof outline›
 
@@ -63,138 +68,290 @@ balanced incomplete block designs. The development is organized as follows.
 context ordered_sym_bibd
 begin
 
-subsection ‹v is even›
+subsection ‹Even order: the determinant argument›
 
-lemma apply_nec_cond_one_1: shows "𝗄 * (𝗄 - 1) = Λ * (𝗏 - 1)"
-proof -
-  have "𝗋 = 𝗄" using rep_value_sym by simp
-    moreover have "𝗋 * (𝗄 - 1) = Λ * (𝗏 - 1)"
-     using necessary_condition_one by simp
-      ultimately show "𝗄 * (𝗄 - 1) = Λ * (𝗏 - 1)" by simp
-    qed
+text ‹
+For a symmetric design, the replication number equals the block size.
+Combining this with the standard parameter relation gives the identity
+needed to simplify the determinant of the incidence-matrix product.
+›
 
-lemma apply_nec_cond_one_2: shows "𝗄 + Λ * (𝗏 - 1) = 𝗄^2"
+lemma symmetric_design_parameter_relation:
+  "𝗄 * (𝗄 - 1) = Λ * (𝗏 - 1)"
 proof -
-  have "𝗄 + Λ * (𝗏 - 1) = 𝗄 + 𝗄 * (𝗄 - 1)"
-    using apply_nec_cond_one_1 by simp
-    also have "𝗄 + 𝗄 * (𝗄 - 1) = 𝗄^2"
-      by (simp add: algebra_simps power2_eq_square)
-    ultimately show "𝗄 + Λ * (𝗏 - 1) = 𝗄^2"
-      using apply_nec_cond_one_1 by simp
-  qed
+  have r_eq_k:
+    "𝗋 = 𝗄"
+    using rep_value_sym
+    by simp
 
-lemma apply_nec_cond_one_3: shows
-  "(𝗄 + Λ * (𝗏 - 1))* (𝗄 - Λ)^(𝗏 - 1) = 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)"
-proof -
-  have "(𝗄 + Λ * (𝗏 - 1))* (𝗄 - Λ)^(𝗏 - 1) = 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)"
-    using apply_nec_cond_one_2 by simp
-  thus ?thesis by simp
+  have parameter_relation:
+    "𝗋 * (𝗄 - 1) = Λ * (𝗏 - 1)"
+    using necessary_condition_one
+    by simp
+
+  show ?thesis
+    using r_eq_k parameter_relation
+    by simp
 qed
 
-lemma det_incidence: "(det N)^2 = det (N * N⇧T)"
-proof - 
-  have "det (N * N⇧T) = det N * det N⇧T" 
-  by (metis (full_types) N_carrier_mat det_mult local.symmetric transpose_carrier_mat)
-  also have "det N * det N⇧T = det N * det N"
-  using N_carrier_mat det_transpose local.symmetric by auto
-  then have "det (N * N⇧T) = (det N)^2" by (simp add: calculation power2_eq_square)
-  thus ?thesis by simp
-qed 
-
-lemma sym_det_in_mat_square:
- "(det N)^2 = 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)"
-proof - 
-  have "det (N * N⇧T) = (𝗋 + Λ * (𝗏 - 1))* (𝗋 - Λ)^(𝗏 - 1)"
-    using determinant_inc_mat_square by simp
-    then have "det (N * N⇧T) = (𝗄 + Λ * (𝗏 - 1))* (𝗄 - Λ)^(𝗏 - 1)"
-      using rep_value_sym by simp
-    also have "(𝗄 + Λ * (𝗏 - 1))* (𝗄 - Λ)^(𝗏 - 1) = 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)"
-      using apply_nec_cond_one_3 by simp
-    then have "det (N * N⇧T) = 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)" 
-      using calculation by argo
-    then show ?thesis using det_incidence by simp
-  qed
-
-lemma power_of_k_minus_lambda_1:
-  "(det N)^2 / 𝗄^2 = (𝗄 - Λ)^(𝗏 - 1)" 
-proof - 
-  have "(det N)^2 = 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)" 
-    using sym_det_in_mat_square by simp
-  then have "(det N)^2 / 𝗄^2 = (𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)) / 𝗄^2" 
-    by (simp add: divide_simps)
-  also have "... = 𝗄^2 / 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)" by (simp add: divide_simps)
-  also have "... = 1 * (𝗄 - Λ)^(𝗏 - 1)" using rep_not_zero by fastforce
-  also have "... = (𝗄 - Λ)^(𝗏 - 1)" by auto
+lemma block_size_index_identity:
+  "𝗄 + Λ * (𝗏 - 1) = 𝗄^2"
+proof -
+  have
+    "𝗄 + Λ * (𝗏 - 1) =
+     𝗄 + 𝗄 * (𝗄 - 1)"
+    using symmetric_design_parameter_relation
+    by simp
+  also have
+    "... = 𝗄^2"
+    by (simp add: algebra_simps power2_eq_square)
   finally show ?thesis .
-  qed
+qed
 
-lemma power_of_k_minus_lambda_2: 
+text ‹
+The determinant of the incidence matrix multiplied by its transpose is
+the square of the determinant of the incidence matrix.
+›
+
+lemma det_incidence:
+  "(det N)^2 = det (N * N⇧T)"
+proof -
+  have
+    "det (N * N⇧T) = det N * det N⇧T"
+    by (metis (full_types)
+        N_carrier_mat det_mult local.symmetric transpose_carrier_mat)
+  also have
+    "... = det N * det N"
+    using N_carrier_mat det_transpose local.symmetric
+    by auto
+  also have
+    "... = (det N)^2"
+    by (simp add: power2_eq_square)
+  finally show ?thesis
+    by simp
+qed
+
+text ‹
+The known determinant formula for a regular pairwise balanced design
+now simplifies because the design is symmetric and
+@{term "𝗄 + Λ * (𝗏 - 1) = 𝗄^2"}.
+›
+
+lemma symmetric_incidence_determinant_square:
+  "(det N)^2 = 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)"
+proof -
+  have
+    "det (N * N⇧T) =
+     (𝗋 + Λ * (𝗏 - 1)) * (𝗋 - Λ)^(𝗏 - 1)"
+    using determinant_inc_mat_square
+    by simp
+  also have
+    "... =
+     (𝗄 + Λ * (𝗏 - 1)) * (𝗄 - Λ)^(𝗏 - 1)"
+    using rep_value_sym
+    by simp
+  also have
+    "... = 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)"
+    using block_size_index_identity
+    by simp
+  finally have
+    "det (N * N⇧T) =
+     𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)"
+    .
+  then show ?thesis
+    using det_incidence
+    by simp
+qed
+
+text ‹
+Dividing the determinant identity by the nonzero block size expresses
+the relevant power of @{term "𝗄 - Λ"} as a rational square.
+›
+
+lemma determinant_quotient_square:
+  "(det N)^2 / 𝗄^2 = (𝗄 - Λ)^(𝗏 - 1)"
+proof -
+  have
+    "(det N)^2 =
+     𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)"
+    using symmetric_incidence_determinant_square
+    by simp
+  then have
+    "(det N)^2 / 𝗄^2 =
+     (𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)) / 𝗄^2"
+    by (simp add: divide_simps)
+  also have
+    "... =
+     𝗄^2 / 𝗄^2 * (𝗄 - Λ)^(𝗏 - 1)"
+    by (simp add: divide_simps)
+  also have
+    "... = 1 * (𝗄 - Λ)^(𝗏 - 1)"
+    using rep_not_zero
+    by fastforce
+  also have
+    "... = (𝗄 - Λ)^(𝗏 - 1)"
+    by simp
+  finally show ?thesis .
+qed
+
+lemma determinant_quotient_power:
   "(det N / 𝗄)^2 = (𝗄 - Λ)^(𝗏 - 1)"
 proof -
-  have "(det N)^2 / 𝗄^2 = (𝗄 - Λ)^(𝗏 - 1)" 
-    using power_of_k_minus_lambda_1 by simp
-  then show ?thesis by (simp add: power_divide)
+  have
+    "(det N)^2 / 𝗄^2 =
+     (𝗄 - Λ)^(𝗏 - 1)"
+    using determinant_quotient_square
+    by simp
+  then show ?thesis
+    by (simp add: power_divide)
 qed
 
-lemma power_of_k_minus_lambda_3: "(sqrt(𝗄 - Λ))^(𝗏 - 1) ∈ ℚ"
+text ‹
+Taking square roots shows that the corresponding power of
+@{term "sqrt (𝗄 - Λ)"} is rational.
+›
+
+lemma sqrt_block_difference_power_rational:
+  "(sqrt (𝗄 - Λ))^(𝗏 - 1) ∈ ℚ"
 proof -
-  have "(det N / 𝗄)^2 = (𝗄 - Λ)^(𝗏 - 1)"
-    using power_of_k_minus_lambda_2 by simp
-  then have "sqrt((𝗄 - Λ)^(𝗏 - 1)) = sqrt((det N / 𝗄)^2)" by auto
-  then have "sqrt((𝗄 - Λ)^(𝗏 - 1)) = abs(det N / 𝗄)"
+  have square:
+    "(det N / 𝗄)^2 = (𝗄 - Λ)^(𝗏 - 1)"
+    using determinant_quotient_power
+    by simp
+
+  have
+    "sqrt ((𝗄 - Λ)^(𝗏 - 1)) =
+     sqrt ((det N / 𝗄)^2)"
+    using square
+    by simp
+  also have
+    "... = abs (det N / 𝗄)"
     by (metis real_sqrt_abs)
-  also have "(sqrt(𝗄 - Λ))^(𝗏 - 1) = sqrt ((𝗄 - Λ)^(𝗏 - 1))"
-      by (simp add: real_sqrt_power) 
-  then have "(sqrt(𝗄 - Λ))^(𝗏 - 1) = abs(det N / 𝗄)"
-      using calculation by presburger
-  also have "abs(det N / 𝗄) ∈ ℚ" by simp
-  then show ?thesis by (metis (full_types)
-        ‹sqrt (real (𝗄 - Λ)) ^ (𝗏 - 1) = ¦real_of_int (det N) / real 𝗄¦›)
+  finally have sqrt_eq:
+    "sqrt ((𝗄 - Λ)^(𝗏 - 1)) =
+     abs (det N / 𝗄)"
+    .
+
+  have power_eq:
+    "(sqrt (𝗄 - Λ))^(𝗏 - 1) =
+     sqrt ((𝗄 - Λ)^(𝗏 - 1))"
+    by (simp add: real_sqrt_power)
+
+  have power_abs_eq:
+    "(sqrt (𝗄 - Λ))^(𝗏 - 1) =
+     abs (det N / 𝗄)"
+    using power_eq sqrt_eq
+    by simp
+
+  have abs_rational:
+    "abs (det N / 𝗄) ∈ ℚ"
+    by simp
+
+  show ?thesis
+    using power_abs_eq abs_rational
+    by simp
 qed
 
-lemma blocksize_gt_index: "𝗄 > Λ"
-  using rep_value_sym index_lt_replication by auto
+lemma block_size_gt_index:
+  "𝗄 > Λ"
+  using rep_value_sym index_lt_replication
+  by auto
+
+text ‹
+When the order is even, @{term "𝗏 - 1"} is odd.  The preceding
+determinant argument says that an odd power of @{term "sqrt (𝗄 - Λ)"}
+is rational.  Since its square is already rational and nonzero, the
+square root itself must be rational.
+›
 
 lemma bruck_ryser_chowla_even_rat:
-  assumes "even 𝗏"
-  shows "sqrt(𝗄 - Λ) ∈ ℚ"
+  assumes even_v:
+    "even 𝗏"
+  shows
+    "sqrt (𝗄 - Λ) ∈ ℚ"
 proof -
-  have diff_rat: ‹𝗄 - Λ ∈ ℚ› by simp
-  have eq: "(sqrt(𝗄 - Λ))^(𝗏 - 1) ∈ ℚ" using power_of_k_minus_lambda_3
+  have difference_rational:
+    "𝗄 - Λ ∈ ℚ"
+    by simp
+
+  have power_rational:
+    "(sqrt (𝗄 - Λ))^(𝗏 - 1) ∈ ℚ"
+    using sqrt_block_difference_power_rational
     by blast
-  from assms obtain m where "𝗏 = 2 * m" "m > 0" using v_non_zero by auto
-  then have "𝗏 - 1 = 2 * m - 1" by auto
-  then have "(sqrt(𝗄 - Λ))^(2 * m - 1) ∈ ℚ"
-    using eq by auto
-  then have rat: ‹(sqrt(𝗄 - Λ))^(2 * m) / (sqrt(𝗄 - Λ)) ∈ ℚ›
-    using ‹0 < m› div_by_0 div_less_iff_less_mult mult.commute
-        nonzero_mult_div_cancel_left one_div_two_eq_zero pos2 power_eq_0_iff
-        power_minus_mult zero_less_diff
-    by (metis nat_0_less_mult_iff) 
-  have eq2: ‹(sqrt(𝗄 - Λ))^(2 * m) / (sqrt(𝗄 - Λ)) = 
-    ((𝗄 - Λ))^ m * (1/sqrt(𝗄 - Λ))›
-    using blocksize_gt_index
+
+  obtain m where v_form:
+    "𝗏 = 2 * m"
+    and m_pos:
+    "m > 0"
+    using even_v v_non_zero
+    by auto
+
+  have exponent:
+    "𝗏 - 1 = 2 * m - 1"
+    using v_form
+    by auto
+
+  have odd_power_rational:
+    "(sqrt (𝗄 - Λ))^(2 * m - 1) ∈ ℚ"
+    using power_rational exponent
+    by auto
+
+  have quotient_rational:
+    "(sqrt (𝗄 - Λ))^(2 * m) /
+       sqrt (𝗄 - Λ) ∈ ℚ"
+    using odd_power_rational m_pos
+      div_by_0 div_less_iff_less_mult mult.commute
+      nonzero_mult_div_cancel_left one_div_two_eq_zero
+      pos2 power_eq_0_iff power_minus_mult zero_less_diff
+    by (metis nat_0_less_mult_iff)
+
+  have quotient_eq:
+    "(sqrt (𝗄 - Λ))^(2 * m) /
+       sqrt (𝗄 - Λ) =
+     (𝗄 - Λ)^m * (1 / sqrt (𝗄 - Λ))"
+    using block_size_gt_index
     by (simp add: power_mult)
-  moreover have ‹(𝗄 - Λ) ^ m ∈ ℚ›
-    using diff_rat by (simp add: power_mult Rats_mult_iff)
-  ultimately have ‹1/sqrt(𝗄 - Λ) ∈ ℚ›
-    using rat blocksize_gt_index Rats_mult_iff by force
-  then show ?thesis
+
+  have difference_power_rational:
+    "(𝗄 - Λ)^m ∈ ℚ"
+    using difference_rational
+    by (simp add: power_mult Rats_mult_iff)
+
+  have inverse_rational:
+    "1 / sqrt (𝗄 - Λ) ∈ ℚ"
+    using quotient_rational quotient_eq
+      difference_power_rational block_size_gt_index Rats_mult_iff
+    by force
+
+  show ?thesis
+    using inverse_rational
     by (simp add: divide_inverse)
 qed
 
+text ‹
+The square root of a natural number is either a natural number or
+irrational.  Its rationality therefore implies that it is a natural
+number, completing the even-order case.
+›
+
 theorem bruck_ryser_chowla_even:
-  assumes "even 𝗏"
-  shows "sqrt(𝗄 - Λ) ∈ ℕ"
+  assumes even_v:
+    "even 𝗏"
+  shows
+    "sqrt (𝗄 - Λ) ∈ ℕ"
 proof -
-  have brc_rat: "sqrt(𝗄 - Λ) ∈ ℚ" 
-    using bruck_ryser_chowla_even_rat assms by simp
-  then show ?thesis using sqrt_nat_or_irrat' by blast  
+  have
+    "sqrt (𝗄 - Λ) ∈ ℚ"
+    using bruck_ryser_chowla_even_rat even_v
+    by simp
+  then show ?thesis
+    using sqrt_nat_or_irrat'
+    by blast
 qed
 
 end
 
-subsection ‹v is odd›
+subsection ‹Odd order: the fundamental quadratic identity›
 
 text ‹
 The odd-order argument follows the classical ``rational equivalence''
@@ -212,56 +369,138 @@ context ordered_sym_bibd
 
 begin
 
-lemma lambda_all_ones_extension:
+text ‹
+We first derive the quadratic identity on which the odd-order argument
+is based.  The all-ones part of the incidence-matrix equation contributes
+the square of the sum of the coordinates, while the identity-matrix part
+contributes the sum of their squares.  Combining these evaluations with
+the incidence-matrix identity expresses a sum of squares of incidence
+linear forms as a diagonal quadratic form.
+›
+
+lemma all_ones_quadratic_form:
   fixes x :: "rat mat"
-  shows "(∑j ∈ {0..<𝗏}. ∑h ∈ {0..<𝗏}.
-      (of_nat Λ ⋅⇩m J⇩m 𝗏) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0))
-   = of_nat Λ * (∑j ∈ {0..<𝗏}. x $$ (j, 0))^2"
+  shows
+    "(∑j∈{0..<𝗏}. ∑h∈{0..<𝗏}.
+       (of_nat Λ ⋅⇩m J⇩m 𝗏) $$ (j,h) *
+       x $$ (j,0) * x $$ (h,0))
+     =
+     of_nat Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2"
 proof -
-  have J: "(of_nat Λ ⋅⇩m J⇩m 𝗏) $$ (j,h) = of_nat Λ"
-    if "j < 𝗏" "h < 𝗏" for j h
-    using that by simp
-  have "(∑j ∈ {0..<𝗏}. ∑h ∈ {0..<𝗏}. (of_nat Λ ⋅⇩m J⇩m 𝗏) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0))
-    = (∑j=0..<𝗏. ∑h=0..<𝗏. of_nat Λ * x$$(j,0) * x$$(h,0))"
-    using J by simp
-  also have "... = (∑j=0..<𝗏. ∑h=0..<𝗏. of_nat Λ * (x$$(j,0) * x$$(h,0)))"
+  have J:
+    "(of_nat Λ ⋅⇩m J⇩m 𝗏) $$ (j,h) = of_nat Λ"
+    if "j < 𝗏" and "h < 𝗏"
+    for j h
+    using that
+    by simp
+
+  have
+    "(∑j∈{0..<𝗏}. ∑h∈{0..<𝗏}.
+       (of_nat Λ ⋅⇩m J⇩m 𝗏) $$ (j,h) *
+       x $$ (j,0) * x $$ (h,0))
+     =
+     (∑j=0..<𝗏. ∑h=0..<𝗏.
+       of_nat Λ * x $$ (j,0) * x $$ (h,0))"
+    using J
+    by simp
+  also have
+    "... =
+     (∑j=0..<𝗏. ∑h=0..<𝗏.
+       of_nat Λ * (x $$ (j,0) * x $$ (h,0)))"
     by (simp add: algebra_simps)
-  also have "… = (∑j ∈ {0..<𝗏}. of_nat Λ * (∑h ∈ {0..<𝗏}. x$$(j,0) * x$$(h,0)))"
+  also have
+    "... =
+     (∑j∈{0..<𝗏}.
+       of_nat Λ *
+       (∑h∈{0..<𝗏}. x $$ (j,0) * x $$ (h,0)))"
     by (simp add: sum_distrib_left)
-  also have "… = of_nat Λ * (∑j ∈ {0..<𝗏}. (∑h ∈ {0..<𝗏}. x$$(j,0) * x$$(h,0)))"
+  also have
+    "... =
+     of_nat Λ *
+     (∑j∈{0..<𝗏}.
+       ∑h∈{0..<𝗏}. x $$ (j,0) * x $$ (h,0))"
     by (simp add: sum_distrib_left)
-  also have "… = of_nat Λ * ((∑j ∈ {0..<𝗏}. x$$(j,0)) * (∑h ∈ {0..<𝗏}. x$$(h,0)))"
+  also have
+    "... =
+     of_nat Λ *
+     ((∑j∈{0..<𝗏}. x $$ (j,0)) *
+      (∑h∈{0..<𝗏}. x $$ (h,0)))"
     by (metis sum_product)
-  also have "… = of_nat Λ * (∑j ∈ {0..<𝗏}. x$$(j,0))^2"
+  also have
+    "... =
+     of_nat Λ * (∑j∈{0..<𝗏}. x $$ (j,0))^2"
     by (metis power2_eq_square)
   finally show ?thesis .
 qed
 
-lemma order_times_identity_matrix:
+lemma identity_matrix_quadratic_form:
   fixes x :: "rat mat"
   shows
-  "(∑ j<𝗏. ∑ h<𝗏.
-      (rat_of_nat (𝗋 - Λ) ⋅⇩m 1⇩m 𝗏) $$ (j,h) * x $$ (j,0) * x $$ (h,0))
-   = rat_of_nat (𝗋 - Λ) * (∑ j<𝗏. (x $$ (j,0))^2)"
+    "(∑j<𝗏. ∑h<𝗏.
+       (rat_of_nat (𝗋 - Λ) ⋅⇩m 1⇩m 𝗏) $$ (j,h) *
+       x $$ (j,0) * x $$ (h,0))
+     =
+     rat_of_nat (𝗋 - Λ) *
+     (∑j<𝗏. (x $$ (j,0))^2)"
 proof -
-  have step: "⋀j h. rat_of_nat (𝗋 - Λ) * (if j = h then 1 else 0) * x $$ (j,0) * x $$ (h,0) =
-                     (if j = h then rat_of_nat (𝗋 - Λ) * x $$ (j,0) * x $$ (h,0) else 0)"
+  have diagonal_entry:
+    "rat_of_nat (𝗋 - Λ) *
+       (if j = h then 1 else 0) *
+       x $$ (j,0) * x $$ (h,0)
+     =
+     (if j = h
+      then rat_of_nat (𝗋 - Λ) *
+           x $$ (j,0) * x $$ (h,0)
+      else 0)"
+    for j h
     by auto
-  have "(∑ j<𝗏. ∑ h<𝗏. (rat_of_nat (𝗋 - Λ) ⋅⇩m 1⇩m 𝗏) $$ (j,h) * x $$ (j,0) * x $$ (h,0))
-      = (∑ j<𝗏. ∑ h<𝗏. rat_of_nat (𝗋 - Λ) * (if j = h then 1 else 0) * x $$ (j,0) * x $$ (h,0))"
-    unfolding one_mat_def by simp
-  also have "... = (∑ j<𝗏. ∑ h<𝗏. (if j = h then rat_of_nat (𝗋 - Λ) * x $$ (j,0) * x $$ (h,0) else 0))"
-    by (subst step) simp
-  also have "... = (∑ j<𝗏. rat_of_nat (𝗋 - Λ) * x $$ (j,0) * x $$ (j,0))"
+
+  have
+    "(∑j<𝗏. ∑h<𝗏.
+       (rat_of_nat (𝗋 - Λ) ⋅⇩m 1⇩m 𝗏) $$ (j,h) *
+       x $$ (j,0) * x $$ (h,0))
+     =
+     (∑j<𝗏. ∑h<𝗏.
+       rat_of_nat (𝗋 - Λ) *
+       (if j = h then 1 else 0) *
+       x $$ (j,0) * x $$ (h,0))"
+    unfolding one_mat_def
     by simp
-  also have "... = rat_of_nat (𝗋 - Λ) * (∑ j<𝗏. x $$ (j,0) * x $$ (j,0))"
+  also have
+    "... =
+     (∑j<𝗏. ∑h<𝗏.
+       if j = h
+       then rat_of_nat (𝗋 - Λ) *
+            x $$ (j,0) * x $$ (h,0)
+       else 0)"
+    by (subst diagonal_entry, simp)
+  also have
+    "... =
+     (∑j<𝗏.
+       rat_of_nat (𝗋 - Λ) *
+       x $$ (j,0) * x $$ (j,0))"
+    by simp
+  also have
+    "... =
+     rat_of_nat (𝗋 - Λ) *
+     (∑j<𝗏. x $$ (j,0) * x $$ (j,0))"
     by (simp add: sum_distrib_left mult.assoc)
-  also have "... = rat_of_nat (𝗋 - Λ) * (∑ j<𝗏. (x $$ (j,0))^2)"
-    unfolding power2_eq_square by simp
+  also have
+    "... =
+     rat_of_nat (𝗋 - Λ) *
+     (∑j<𝗏. (x $$ (j,0))^2)"
+    unfolding power2_eq_square
+    by simp
   finally show ?thesis .
 qed
 
-lemma combine_r_lambda_terms:
+text ‹
+Adding the preceding two evaluations gives the quadratic form associated
+with the decomposition of the incidence Gram matrix into its all-ones
+and identity-matrix components.
+›
+
+lemma incidence_diagonal_quadratic_form:
   fixes x :: "rat mat"
   shows "(∑j ∈ {0..<𝗏}. (∑h ∈ {0..<𝗏}. 
     ((of_int (int Λ) ⋅⇩m (J⇩m 𝗏)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0)))) +
@@ -274,7 +513,7 @@ proof -
   proof -
     have "(of_int (int Λ) ⋅⇩m (J⇩m 𝗏 :: rat mat)) = (of_nat Λ ⋅⇩m (J⇩m 𝗏 :: rat mat))"
       by simp
-    then show ?thesis using lambda_all_ones_extension by fastforce
+    then show ?thesis using all_ones_quadratic_form by fastforce
   qed
   have ord: "(∑j ∈{0..<𝗏} .(∑h ∈{0..<𝗏}.(of_int (int (𝗋 - Λ)) ⋅⇩m (1⇩m 𝗏)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0))) =
         of_int (int (𝗋 - Λ)) * (∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2)"
@@ -285,7 +524,7 @@ proof -
           (∑j ∈{0..<𝗏} .(∑h ∈{0..<𝗏}.(rat_of_nat (𝗋 - Λ) ⋅⇩m (1⇩m 𝗏)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0)))"
       using eq by metis
     also have "... = rat_of_nat (𝗋 - Λ) * (∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2)"
-      using order_times_identity_matrix[of x] by (simp add: atLeast0LessThan)
+      using identity_matrix_quadratic_form[of x] by (simp add: atLeast0LessThan)
     also have "... = of_int (int (𝗋 - Λ)) * (∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2)"
       by simp
     finally show ?thesis .
@@ -293,7 +532,15 @@ proof -
   show ?thesis using lam ord by simp
 qed
 
-lemma brc_x_identity:
+text ‹
+The entries of @{term "N * N⇧T"} are inner products of rows of the
+incidence matrix.  Expanding those entries converts the matrix quadratic
+form into a triple sum over rows and columns.  The incidence-matrix
+identity then evaluates that triple sum as the diagonal quadratic form
+derived above.
+›
+
+lemma incidence_gram_quadratic_identity:
   fixes x :: "rat mat"
   shows "(∑j ∈ {0..<𝗏}. (∑h ∈ {0..<𝗏}. (∑i ∈ {0..<𝗏}.  
     of_int (N $$ (j,i)) * of_int (N $$ (h,i))) * x $$ (j,0) * x $$ (h,0))) =
@@ -344,9 +591,21 @@ proof -
     by (simp add: sum.distrib)
   also have final_equ:  "... = of_int (int Λ) * (∑j ∈ {0..<𝗏}.(x $$ (j, 0)))^2 + 
      of_int (int (𝗋 - Λ)) * (∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2)"
-    using combine_r_lambda_terms by simp
+    using incidence_diagonal_quadratic_form by simp
   finally show ?thesis .
 qed
+
+text ‹
+Expanding each squared incidence linear form and reordering the three
+finite sums gives the quadratic form evaluated in
+@{thm incidence_gram_quadratic_identity}.  Symmetry supplies
+@{term "𝗋 = 𝗄"}.  The resulting identity says that the sum of the
+squares of the incidence linear forms equals Λ times the square of the
+coordinate sum, plus K - Λ times the sum of the coordinate squares.
+
+This is the starting point for the four-square transformations used in
+both odd congruence cases.
+›
 
 lemma brc_x_equation:
   fixes x :: "rat mat"
@@ -381,7 +640,7 @@ proof -
     by (simp add: algebra_simps sum_distrib_left sum_distrib_right)
   also have "... = of_int (int Λ) * (∑j ∈ {0..<𝗏}.(x $$ (j, 0)))^2 +
      of_int (int (𝗋 - Λ)) * (∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2)"
-    using brc_x_identity by simp
+    using incidence_gram_quadratic_identity by simp
   also have "... = of_int (int Λ) * (∑j ∈ {0..<𝗏}. (x $$ (j, 0)))^2 +
      of_int (int (𝗄 - Λ)) * (∑j ∈ {0..<𝗏}. (x $$ (j, 0))^2)"
     using r_eq_k by simp
@@ -435,7 +694,14 @@ fun three_of :: "(rat × rat × rat × rat) ⇒ rat" where
 fun four_of :: "(rat × rat × rat × rat) ⇒ rat" where
   "four_of(y0, y1, y2, y3) = y3"
 
-lemma y_inverses_part_2:
+text ‹
+Provided that the sum of the four coefficient squares is nonzero, the
+inverse transformation is a right inverse of the forward four-square
+transformation.  This allows coordinates introduced by the four-square
+change of variables to be converted back into the original variables.
+›
+
+lemma four_square_transform_inverse:
   fixes a :: "nat"
   fixes b :: "nat"
   fixes c :: "nat"
@@ -629,8 +895,14 @@ proof
     by (metis div_mult_mod_eq mult.commute)
 qed
 
+text ‹
+The forward four-square transformation multiplies the squared norm of
+a four-coordinate vector by the sum of the four coefficient squares.
+This is the algebraic identity that permits the coordinates of the
+quadratic form to be processed in blocks of four.
+›
 
-lemma y_norm_identity:
+lemma four_square_norm_identity:
   fixes a b c d :: nat
   fixes x0 x1 x2 x3 :: rat
   assumes n_def: "n = a^2 + b^2 + c^2 + d^2"
@@ -644,7 +916,13 @@ lemma y_norm_identity:
   unfolding n_def
   by (simp add: algebra_simps power2_eq_square)
 
-lemma y_norm_identity_k_lambda:
+text ‹
+Specializing the four-square norm identity to a representation
+@{term "𝗄 - Λ = a^2 + b^2 + c^2 + d^2"} shows that the transformed
+squared norm is exactly @{term "𝗄 - Λ"} times the original squared norm.
+›
+
+lemma four_square_norm_identity_block_difference:
   fixes a b c d :: nat
   fixes x0 x1 x2 x3 :: rat
   assumes abcd: "𝗄 - Λ = a^2 + b^2 + c^2 + d^2"
@@ -655,10 +933,16 @@ lemma y_norm_identity_k_lambda:
      (four_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2
      =
      of_nat (𝗄 - Λ) * (x0^2 + x1^2 + x2^2 + x3^2)"
-  using y_norm_identity[of "𝗄 - Λ" a b c d x0 x1 x2 x3] abcd
+  using four_square_norm_identity[of "𝗄 - Λ" a b c d x0 x1 x2 x3] abcd
   by simp
 
-lemma y_block_sum_identity:
+text ‹
+Writing the four transformed coordinates separately, their squared sum
+equals @{term "𝗄 - Λ"} times the squared sum of the corresponding four
+original coordinates.
+›
+
+lemma four_square_block_sum_identity:
   fixes a b c d :: nat
   fixes x0 x1 x2 x3 :: rat
   assumes abcd: "𝗄 - Λ = a^2 + b^2 + c^2 + d^2"
@@ -669,10 +953,17 @@ lemma y_block_sum_identity:
      (two_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
      (three_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
      (four_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2"
-  using y_norm_identity_k_lambda[OF abcd, of x0 x1 x2 x3]
+  using four_square_norm_identity_block_difference[OF abcd, of x0 x1 x2 x3]
   by simp
 
-lemma y_block_h_identity:
+text ‹
+Applying the four-coordinate identity to the entries numbered
+@{term "4 * h"}, @{term "4 * h + 1"}, @{term "4 * h + 2"}, and
+@{term "4 * h + 3"} gives the norm-preservation identity for the
+@{term h}-th block of a matrix column.
+›
+
+lemma four_square_indexed_block_identity:
   fixes a b c d :: nat
   fixes x :: "rat mat"
   assumes abcd: "𝗄 - Λ = a^2 + b^2 + c^2 + d^2"
@@ -691,7 +982,7 @@ lemma y_block_h_identity:
         (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2 +
      (four_of (y_of ((a,b,c,d),
         (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2"
-  using y_block_sum_identity[OF abcd,
+  using four_square_block_sum_identity[OF abcd,
       of "x $$ (4*h,0)"
          "x $$ (4*h + 1,0)"
          "x $$ (4*h + 2,0)"
@@ -741,7 +1032,7 @@ lemma y_block_sqsum_identity:
   shows "of_nat (𝗄 - Λ) * x_block_sqsum x h =
          y_block_sqsum a b c d x h"
   unfolding x_block_sqsum_def y_block_sqsum_def
-  using y_block_h_identity[OF abcd, of x h]
+  using four_square_indexed_block_identity[OF abcd, of x h]
   by simp
 
 lemma y_blocks_sqsum_identity:
@@ -766,7 +1057,7 @@ proof -
     by (simp add: sum_distrib_left)
 qed
 
-lemma brc_x_sum_split_4w_last:
+lemma brc_x_sqsum_split_last:
   fixes x :: "rat mat"
   assumes v_form: "𝗏 = 4 * w + 1"
   shows
@@ -780,7 +1071,7 @@ proof -
     by (simp add: sum.atLeast0_lessThan_Suc)
 qed
 
-lemma brc_x_sum_split_4w_last_plain:
+lemma brc_x_sum_split_last:
   fixes x :: "rat mat"
   assumes v_form: "𝗏 = 4 * w + 1"
   shows
@@ -794,7 +1085,7 @@ proof -
     by (simp add: sum.atLeast0_lessThan_Suc)
 qed
 
-lemma brc_x_equation_split:
+lemma brc_x_equation_split_last_coordinate:
   fixes x :: "rat mat"
   assumes v_form: "𝗏 = 4 * w + 1"
   shows
@@ -824,14 +1115,14 @@ proof -
      =
      (∑j∈{0..<4*w}. (x $$ (j,0))^2)
       + (x $$ (4*w,0))^2"
-    using brc_x_sum_split_4w_last[OF v_form] .
+    using brc_x_sqsum_split_last[OF v_form] .
 
   have lin:
     "(∑j∈{0..<𝗏}. x $$ (j,0))
      =
      (∑j∈{0..<4*w}. x $$ (j,0))
       + x $$ (4*w,0)"
-    using brc_x_sum_split_4w_last_plain[OF v_form] .
+    using brc_x_sum_split_last[OF v_form] .
 
   show ?thesis
     using eq sq lin
@@ -847,7 +1138,7 @@ definition x_head_sqsum :: "rat mat ⇒ nat ⇒ rat" where
 definition x_last :: "rat mat ⇒ nat ⇒ rat" where
   "x_last x w = x $$ (4*w,0)"
 
-lemma brc_x_equation_split_named:
+lemma brc_x_equation_head_last:
   fixes x :: "rat mat"
   assumes v_form: "𝗏 = 4 * w + 1"
   shows
@@ -858,7 +1149,7 @@ lemma brc_x_equation_split_named:
     +
     of_nat (𝗄 - Λ) *
       (x_head_sqsum x w + (x_last x w)^2)"
-  using brc_x_equation_split[OF v_form, of x]
+  using brc_x_equation_split_last_coordinate[OF v_form, of x]
   unfolding x_head_sum_def x_head_sqsum_def x_last_def
   by simp
 
@@ -866,7 +1157,7 @@ definition y_blocks_sqsum :: "nat ⇒ nat ⇒ nat ⇒ nat ⇒ rat mat ⇒ nat �
   "y_blocks_sqsum a b c d x w =
      (∑h∈{0..<w}. y_block_sqsum a b c d x h)"
 
-lemma y_blocks_sqsum_identity_named:
+lemma y_blocks_sqsum_scaled:
   fixes a b c d :: nat
   fixes x :: "rat mat"
   assumes abcd: "𝗄 - Λ = a^2 + b^2 + c^2 + d^2"
@@ -878,7 +1169,7 @@ lemma y_blocks_sqsum_identity_named:
   unfolding y_blocks_sqsum_def
   by simp
 
-lemma brc_x_equation_transformed_conditional:
+lemma brc_x_equation_transformed_from_block_partition:
   fixes a b c d :: nat
   fixes x :: "rat mat"
   assumes v_form: "𝗏 = 4 * w + 1"
@@ -903,7 +1194,7 @@ proof -
     +
     of_nat (𝗄 - Λ) *
       (x_head_sqsum x w + (x_last x w)^2)"
-    using brc_x_equation_split_named[OF v_form, of x] .
+    using brc_x_equation_head_last[OF v_form, of x] .
 
   have block_eq:
     "of_nat (𝗄 - Λ) * x_head_sqsum x w =
@@ -913,7 +1204,7 @@ proof -
           of_nat (𝗄 - Λ) * (∑h∈{0..<w}. x_block_sqsum x h)"
       using head_blocks by simp
     also have "... = y_blocks_sqsum a b c d x w"
-      using y_blocks_sqsum_identity_named[OF abcd, of x w] .
+      using y_blocks_sqsum_scaled[OF abcd, of x w] .
     finally show ?thesis .
   qed
 
@@ -922,7 +1213,7 @@ proof -
     by (simp add: algebra_simps)
 qed
 
-lemma sum_first_4_Suc_split:
+lemma sum_four_block_Suc:
   fixes f :: "nat ⇒ rat"
   shows "(∑j = 0..<4 + n * 4. f j)
        =
@@ -940,7 +1231,7 @@ proof -
     by (simp add: algebra_simps)
 qed
 
-lemma sum_x_first_4w_as_blocks:
+lemma x_head_sqsum_as_blocks:
   fixes x :: "rat mat"
   shows "x_head_sqsum x w = (∑h∈{0..<w}. x_block_sqsum x h)"
 proof (induct w)
@@ -950,7 +1241,7 @@ proof (induct w)
     by simp
 next
   case (Suc n)
-  have IH:
+  have block_partition:
     "x_head_sqsum x n = (∑h∈{0..<n}. x_block_sqsum x h)"
     using Suc.hyps by simp
 
@@ -959,11 +1250,11 @@ next
      =
      x_head_sqsum x n + x_block_sqsum x n"
     unfolding x_head_sqsum_def x_block_sqsum_def
-    using sum_first_4_Suc_split[of "λj. (x $$ (j,0))^2" n]
+    using sum_four_block_Suc[of "λj. (x $$ (j,0))^2" n]
     by (simp add: algebra_simps)
 
   show ?case
-    using IH split
+    using block_partition split
     by simp
 qed
 
@@ -981,8 +1272,8 @@ lemma brc_x_equation_transformed:
     y_blocks_sqsum a b c d x w
     +
     of_nat (𝗄 - Λ) * (x_last x w)^2"
-  using brc_x_equation_transformed_conditional[
-    OF v_form abcd sum_x_first_4w_as_blocks]
+  using brc_x_equation_transformed_from_block_partition[
+    OF v_form abcd x_head_sqsum_as_blocks]
   by simp
 
 definition brc_y0 :: "rat mat ⇒ nat ⇒ rat" where
@@ -995,7 +1286,7 @@ definition brc_L :: "rat mat ⇒ nat ⇒ rat" where
   "brc_L x i =
      (∑h∈{0..<𝗏}. of_int (N $$ (h,i)) * x $$ (h,0))"
 
-lemma brc_x_equation_transformed_named:
+lemma brc_x_equation_in_linear_forms:
   fixes a b c d :: nat
   fixes x :: "rat mat"
   assumes v_form: "𝗏 = 4 * w + 1"
@@ -1012,7 +1303,7 @@ lemma brc_x_equation_transformed_named:
   unfolding brc_L_def brc_y0_def brc_yv_def
   by simp
 
-lemma brc_x_equation_extended:
+lemma brc_x_equation_with_auxiliary_coordinate:
   fixes x :: "rat mat"
   fixes xv1 :: rat
   shows
@@ -1128,7 +1419,7 @@ next
     by (simp add: sum.union_disjoint algebra_simps)
 qed
 
-lemma brc_x_equation_extended_vector:
+lemma brc_x_equation_for_extended_vector:
   fixes x :: "rat mat"
   fixes xv1 :: rat
   shows
@@ -1160,7 +1451,7 @@ proof -
          (∑j ∈ {0..<𝗏}. x $$ (j,0))^2
        + of_int (int (𝗄 - Λ)) *
          ((∑j ∈ {0..<𝗏}. (x $$ (j,0))^2) + xv1^2)"
-    using brc_x_equation_extended[of x xv1] .
+    using brc_x_equation_with_auxiliary_coordinate[of x xv1] .
 
   show ?thesis
     using base ext
@@ -1316,7 +1607,7 @@ proof -
        of_nat (𝗄 - Λ) *
          (∑j∈{0..<𝗏 + 1}.
             (brc_extend_x x xv1 $$ (j,0))^2)"
-    using brc_x_equation_extended_vector[of x xv1]
+    using brc_x_equation_for_extended_vector[of x xv1]
     by simp
 
   have transformed:
@@ -2492,6 +2783,15 @@ proof -
   qed
 qed
 
+text ‹
+This is the single-step invariant for rational elimination.  Assuming
+that the first q coordinates have already been eliminated, the matching
+substitution cancels coordinate q, preserves the earlier zero prefix,
+and rewrites the weighted sum of squared linear forms as the same
+diagonal quadratic form.  Iterating this step leaves only the terminal
+linear forms.
+›
+
 lemma rat_weighted_elimination_stage_step:
   fixes W :: "nat ⇒ rat"
   fixes C :: "nat ⇒ nat ⇒ rat"
@@ -2718,6 +3018,13 @@ proof -
     using at_u remove_prefix
     by simp
 qed
+
+text ‹
+Induction on the elimination stage now iterates the preceding one-step
+invariant.  After q stages, the first q coordinates vanish, the
+coefficient arrays record the accumulated substitutions, and the
+weighted quadratic identity remains valid.
+›
 
 lemma rat_weighted_elimination_iterate:
   fixes W :: "nat ⇒ rat"
@@ -3031,6 +3338,13 @@ definition rat_unit_coordinate ::
   "rat_unit_coordinate k =
      (λj. if j = k then 1 else 0)"
 
+text ‹
+After all nonterminal coordinates have been eliminated, the surviving
+weighted identity involves only the final two linear forms and one
+diagonal coordinate.  Choosing that coordinate to be one guarantees
+that the resulting rational solution is nontrivial.
+›
+
 lemma rat_weighted_elimination_nontrivial_solution:
   fixes C :: "nat ⇒ nat ⇒ rat"
   fixes d W :: "nat ⇒ rat"
@@ -3286,7 +3600,7 @@ proof -
       y (4*h+1),
       y (4*h+2),
       y (4*h+3))"
-    using y_inverses_part_2[
+    using four_square_transform_inverse[
       OF nz,
       of "y (4*h)"
          "y (4*h+1)"
@@ -4100,7 +4414,7 @@ proof -
      =
      (∑h∈{0..<4*w}. x $$ (h,0))
      + x $$ (4*w,0)"
-    using brc_x_sum_split_4w_last_plain[
+    using brc_x_sum_split_last[
       OF v_form, of x]
     .
 
@@ -4237,7 +4551,7 @@ proof -
 
   have diff_nz:
     "𝗄 - Λ ≠ 0"
-    using blocksize_gt_index
+    using block_size_gt_index
     by simp
 
   have nz:
@@ -4253,7 +4567,7 @@ proof -
      y_blocks_sqsum a b c d ?X w
      +
      of_nat (𝗄 - Λ) * (brc_yv ?X w)^2"
-    using brc_x_equation_transformed_named[
+    using brc_x_equation_in_linear_forms[
       where w = w and a = a and b = b and c = c and d = d
         and x = ?X,
       OF v_form abcd]
@@ -6016,7 +6330,7 @@ proof -
 
   have diff_nz:
     "𝗄 - Λ ≠ 0"
-    using blocksize_gt_index
+    using block_size_gt_index
     by simp
 
   have nz:
@@ -6871,6 +7185,13 @@ proof -
     by blast
 qed
 
+text ‹
+Every odd natural number is congruent to either 1 or 3 modulo 4.
+The preceding results supply an integer solution with a plus sign in the
+first case and a minus sign in the second.  The corresponding power of
+-1 rewrites these two equations as one uniform statement.
+›
+
 theorem bruck_ryser_chowla_odd:
   assumes odd_v:
     "odd 𝗏"
@@ -6884,9 +7205,8 @@ theorem bruck_ryser_chowla_odd:
 proof -
   have mod_cases:
     "𝗏 mod 4 = 1 ∨ 𝗏 mod 4 = 3"
-    using odd_mod_four_cases[
-      OF odd_v]
-    .
+    using odd_v
+    by presburger
 
   from mod_cases show ?thesis
   proof
