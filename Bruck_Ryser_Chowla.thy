@@ -942,10 +942,11 @@ lemma four_square_block_sum_identity:
   by simp
 
 text \<open>
-\noindent Applying the four-coordinate identity to the entries numbered
-@{term "4 * h"}, @{term "4 * h + 1"}, @{term "4 * h + 2"}, and
-@{term "4 * h + 3"} gives the norm-preservation identity for the
-@{term h}-th block of a matrix column.
+Applying the four-coordinate identity to the entries numbered
+@{term "4 * h :: nat"}, @{term "4 * h + 1 :: nat"},
+@{term "4 * h + 2 :: nat"}, and @{term "4 * h + 3 :: nat"}
+gives the norm-preservation identity for the @{term "h :: nat"}-th
+block of a matrix column.
 \<close>
 
 lemma four_square_indexed_block_identity:
@@ -3431,12 +3432,12 @@ qed
 subsubsection \<open>The case v = 4w + 1\<close>
 
 text \<open>
-For order @{term "4 * w + 1"}, the inverse four-square transformation
-reconstructs the original coordinates from a vector of new variables.
-The coefficient functions below express every incidence linear form, and
-the distinguished sum of coordinates, in those new variables.  Applying
-the generic elimination theorem gives the required rational solution with
-the plus sign.
+For order @{term "4 * w + 1 :: nat"}, the inverse four-square
+transformation reconstructs the original coordinates from a vector of
+new variables. The coefficient functions below express every incidence
+linear form, and the distinguished sum of coordinates, in those new
+variables. Applying the generic elimination theorem gives the required
+rational solution with the plus sign.
 \<close>
 
 definition brc_tuple_component ::
@@ -5049,10 +5050,10 @@ qed
 subsubsection \<open>The case v = 4w - 1\<close>
 
 text \<open>
-For order @{term "4 * w - 1"}, one auxiliary coordinate completes the
-coordinates to blocks of four.  Its diagonal coefficient has the opposite
-sign, which is exactly what produces the minus sign in the terminal
-Bruck--Ryser--Chowla equation.
+For order @{term "4 * w - 1 :: nat"}, one auxiliary coordinate completes
+the coordinates to blocks of four. Its diagonal coefficient has the
+opposite sign, which produces the minus sign in the terminal
+Bruck-Ryser-Chowla equation.
 \<close>
 
 definition brc_x_from_y_minus ::
