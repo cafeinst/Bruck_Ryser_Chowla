@@ -74,21 +74,8 @@ needed to simplify the determinant of the incidence-matrix product.
 
 lemma symmetric_design_parameter_relation:
   "\<k> * (\<k> - 1) = \<Lambda> * (\<v> - 1)"
-proof -
-  have r_eq_k:
-    "\<r> = \<k>"
-    using rep_value_sym
-    by simp
-
-  have parameter_relation:
-    "\<r> * (\<k> - 1) = \<Lambda> * (\<v> - 1)"
-    using necessary_condition_one
-    by simp
-
-  show ?thesis
-    using r_eq_k parameter_relation
-    by simp
-qed
+  using necessary_condition_one rep_value_sym
+  by simp
 
 lemma block_size_index_identity:
   "\<k> + \<Lambda> * (\<v> - 1) = \<k>^2"
@@ -632,7 +619,9 @@ proof -
   finally show ?thesis .
 qed
 
-subsubsection \<open>The four-square change of variables\<close>
+end
+
+subsection \<open>The four-square change of variables\<close>
 
 text \<open>
 The following maps are the rational change of coordinates associated with
@@ -868,18 +857,6 @@ proof -
     by simp
 qed
 
-definition t_of :: "rat mat \<Rightarrow> rat" where
-  "t_of x = (\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))"
-
-lemma brc_v_eq_4w_plus_1:
-  assumes "\<v> mod 4 = 1"
-  shows "\<exists>w. \<v> = 4 * w + 1"
-proof
-  show "\<v> = 4 * (\<v> div 4) + 1"
-    using assms
-    by (metis div_mult_mod_eq mult.commute)
-qed
-
 text \<open>
 \noindent The forward four-square transformation multiplies the squared norm of
 a four-coordinate vector by the sum of the four coefficient squares.
@@ -900,6 +877,21 @@ lemma four_square_norm_identity:
      of_nat n * (x0^2 + x1^2 + x2^2 + x3^2)"
   unfolding n_def
   by (simp add: algebra_simps power2_eq_square)
+
+context ordered_sym_bibd
+begin
+
+definition t_of :: "rat mat \<Rightarrow> rat" where
+  "t_of x = (\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))"
+
+lemma brc_v_eq_4w_plus_1:
+  assumes "\<v> mod 4 = 1"
+  shows "\<exists>w. \<v> = 4 * w + 1"
+proof
+  show "\<v> = 4 * (\<v> div 4) + 1"
+    using assms
+    by (metis div_mult_mod_eq mult.commute)
+qed
 
 text \<open>
 \noindent Specializing the four-square norm identity to a representation
@@ -974,20 +966,6 @@ lemma four_square_indexed_block_identity:
          "x $$ (4*h + 2,0)"
          "x $$ (4*h + 3,0)"]
   by simp
-
-definition y_block :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> rat mat \<Rightarrow> nat \<Rightarrow> rat" where
-  "y_block a b c d x i =
-    (let h = i div 4;
-         r = i mod 4;
-         y = y_of ((a,b,c,d),
-              (x $$ (4*h,0),
-               x $$ (4*h + 1,0),
-               x $$ (4*h + 2,0),
-               x $$ (4*h + 3,0)))
-     in if r = 0 then one_of y
-        else if r = 1 then two_of y
-        else if r = 2 then three_of y
-        else four_of y)"
 
 definition x_block_sqsum :: "rat mat \<Rightarrow> nat \<Rightarrow> rat" where
   "x_block_sqsum x h =
@@ -1623,6 +1601,10 @@ eliminated prefix equal to zero.  Iteration reduces the quadratic identity
 to its final two coordinates while preserving a nontrivial zero.
 \<close>
 
+end
+
+subsection \<open>Rational elimination of linear squares\<close>
+
 definition brc_match_y :: "rat \<Rightarrow> rat \<Rightarrow> rat" where
   "brc_match_y A R =
      (if A = 1 then -R / 2 else R / (1 - A))"
@@ -1673,32 +1655,14 @@ definition brc_match_coeff :: "rat \<Rightarrow> rat \<Rightarrow> rat" where
   "brc_match_coeff A B =
      (if A = 1 then -B / 2 else B / (1 - A))"
 
-definition rat_vec_on ::
-  "nat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> bool" where
-  "rat_vec_on n x \<longleftrightarrow>
-     (\<forall>i. n \<le> i \<longrightarrow> x i = 0)"
-
 definition rat_vec_zero ::
   "nat \<Rightarrow> rat" where
   "rat_vec_zero i = 0"
-
-definition has_nontrivial_zero_on ::
-  "nat \<Rightarrow> ((nat \<Rightarrow> rat) \<Rightarrow> rat) \<Rightarrow> bool" where
-  "has_nontrivial_zero_on n Q \<longleftrightarrow>
-     (\<exists>x :: nat \<Rightarrow> rat.
-        rat_vec_on n x \<and>
-        x \<noteq> rat_vec_zero \<and>
-        Q x = 0)"
 
 definition rat_diagonal_form ::
   "nat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> rat" where
   "rat_diagonal_form n c x =
      (\<Sum>i\<in>{0..<n}. c i * (x i)^2)"
-
-definition rat_scale_coordinate ::
-  "nat \<Rightarrow> rat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> nat \<Rightarrow> rat" where
-  "rat_scale_coordinate k u x =
-     (\<lambda>i. if i = k then u * x i else x i)"
 
 definition rat_linear_form ::
   "nat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> rat" where
@@ -3439,6 +3403,9 @@ linear form, and the distinguished sum of coordinates, in those new
 variables. Applying the generic elimination theorem gives the required
 rational solution with the plus sign.
 \<close>
+
+context ordered_sym_bibd
+begin
 
 definition brc_tuple_component ::
   "(rat \<times> rat \<times> rat \<times> rat) \<Rightarrow> nat \<Rightarrow> rat" where
