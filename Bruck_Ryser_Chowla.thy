@@ -656,18 +656,6 @@ fun y_inv_of :: "((nat \<times> nat \<times> nat \<times> nat) \<times> (rat \<t
   "y_inv_of((a, b, c, d),(y0, y1, y2, y3)) = 
    snd(y_inv_reversible((a, b, c, d),(y0, y1, y2, y3)))"
 
-fun one_of :: "(rat \<times> rat \<times> rat \<times> rat) \<Rightarrow> rat" where
-  "one_of(y0, y1, y2, y3) = y0"
-
-fun two_of :: "(rat \<times> rat \<times> rat \<times> rat) \<Rightarrow> rat" where
-  "two_of(y0, y1, y2, y3) = y1"
-
-fun three_of :: "(rat \<times> rat \<times> rat \<times> rat) \<Rightarrow> rat" where
-  "three_of(y0, y1, y2, y3) = y2"
-
-fun four_of :: "(rat \<times> rat \<times> rat \<times> rat) \<Rightarrow> rat" where
-  "four_of(y0, y1, y2, y3) = y3"
-
 text \<open>
 \noindent Provided that the sum of the four coefficient squares is nonzero, the
 inverse transformation is a right inverse of the forward four-square
@@ -869,10 +857,10 @@ lemma four_square_norm_identity:
   fixes x0 x1 x2 x3 :: rat
   assumes n_def: "n = a^2 + b^2 + c^2 + d^2"
   shows
-    "(one_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
-     (two_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
-     (three_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
-     (four_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2
+    "(fst (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
+     (fst (snd (y_of ((a,b,c,d),(x0,x1,x2,x3)))))^2 +
+     (fst (snd (snd (y_of ((a,b,c,d),(x0,x1,x2,x3))))))^2 +
+     (snd (snd (snd (y_of ((a,b,c,d),(x0,x1,x2,x3))))))^2
      =
      of_nat n * (x0^2 + x1^2 + x2^2 + x3^2)"
   unfolding n_def
@@ -904,10 +892,10 @@ lemma four_square_norm_identity_block_difference:
   fixes x0 x1 x2 x3 :: rat
   assumes abcd: "\<k> - \<Lambda> = a^2 + b^2 + c^2 + d^2"
   shows
-    "(one_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
-     (two_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
-     (three_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
-     (four_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2
+    "(fst (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
+     (fst (snd (y_of ((a,b,c,d),(x0,x1,x2,x3)))))^2 +
+     (fst (snd (snd (y_of ((a,b,c,d),(x0,x1,x2,x3))))))^2 +
+     (snd (snd (snd (y_of ((a,b,c,d),(x0,x1,x2,x3))))))^2
      =
      of_nat (\<k> - \<Lambda>) * (x0^2 + x1^2 + x2^2 + x3^2)"
   using four_square_norm_identity[of "\<k> - \<Lambda>" a b c d x0 x1 x2 x3] abcd
@@ -926,10 +914,10 @@ lemma four_square_block_sum_identity:
   shows
     "of_nat (\<k> - \<Lambda>) * (x0^2 + x1^2 + x2^2 + x3^2)
      =
-     (one_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
-     (two_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
-     (three_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
-     (four_of (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2"
+     (fst (y_of ((a,b,c,d),(x0,x1,x2,x3))))^2 +
+     (fst (snd (y_of ((a,b,c,d),(x0,x1,x2,x3)))))^2 +
+     (fst (snd (snd (y_of ((a,b,c,d),(x0,x1,x2,x3))))))^2 +
+     (snd (snd (snd (y_of ((a,b,c,d),(x0,x1,x2,x3))))))^2"
   using four_square_norm_identity_block_difference[OF abcd, of x0 x1 x2 x3]
   by simp
 
@@ -952,14 +940,14 @@ lemma four_square_indexed_block_identity:
        (x $$ (4*h + 2,0))^2 +
        (x $$ (4*h + 3,0))^2)
      =
-     (one_of (y_of ((a,b,c,d),
+     (fst (y_of ((a,b,c,d),
         (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2 +
-     (two_of (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2 +
-     (three_of (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2 +
-     (four_of (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2"
+     (fst (snd (y_of ((a,b,c,d),
+        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0))))))^2 +
+     (fst (snd (snd (y_of ((a,b,c,d),
+        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))))^2 +
+     (snd (snd (snd (y_of ((a,b,c,d),
+        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))))^2"
   using four_square_block_sum_identity[OF abcd,
       of "x $$ (4*h,0)"
          "x $$ (4*h + 1,0)"
@@ -974,29 +962,29 @@ definition x_block_sqsum :: "rat mat \<Rightarrow> nat \<Rightarrow> rat" where
      (x $$ (4*h + 2,0))^2 +
      (x $$ (4*h + 3,0))^2"
 
-definition y_block_sqsum :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> rat mat \<Rightarrow> nat \<Rightarrow> rat" where
+definition y_block_sqsum ::
+  "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
+   rat mat \<Rightarrow> nat \<Rightarrow> rat"
+where
   "y_block_sqsum a b c d x h =
-     (one_of (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0),
-         x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2 +
-     (two_of (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0),
-         x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2 +
-     (three_of (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0),
-         x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2 +
-     (four_of (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0),
-         x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2"
+     (case y_of ((a,b,c,d),
+        (x $$ (4*h,0),
+         x $$ (4*h + 1,0),
+         x $$ (4*h + 2,0),
+         x $$ (4*h + 3,0)))
+      of (y0,y1,y2,y3) \<Rightarrow>
+         y0^2 + y1^2 + y2^2 + y3^2)"
 
 lemma y_block_sqsum_identity:
   fixes a b c d :: nat
   fixes x :: "rat mat"
-  assumes abcd: "\<k> - \<Lambda> = a^2 + b^2 + c^2 + d^2"
-  shows "of_nat (\<k> - \<Lambda>) * x_block_sqsum x h =
-         y_block_sqsum a b c d x h"
-  unfolding x_block_sqsum_def y_block_sqsum_def
+  assumes abcd:
+    "\<k> - \<Lambda> = a^2 + b^2 + c^2 + d^2"
+  shows
+    "of_nat (\<k> - \<Lambda>) * x_block_sqsum x h =
+     y_block_sqsum a b c d x h"
   using four_square_indexed_block_identity[OF abcd, of x h]
+  unfolding x_block_sqsum_def y_block_sqsum_def
   by simp
 
 lemma y_blocks_sqsum_identity:
@@ -1590,20 +1578,18 @@ proof -
     by simp
 qed
 
-subsubsection \<open>Rational elimination of linear squares\<close>
-
-text \<open>
-This section isolates the algebraic elimination used in both odd-order
-cases.  At one stage a square of a linear form is matched against one
-diagonal coordinate.  The substitution cancels that coordinate, updates
-the coefficients of all remaining linear forms, and leaves the previously
-eliminated prefix equal to zero.  Iteration reduces the quadratic identity
-to its final two coordinates while preserving a nontrivial zero.
-\<close>
-
 end
 
 subsection \<open>Rational elimination of linear squares\<close>
+
+text \<open>
+This section isolates the algebraic elimination used in both odd-order
+cases. At one stage a square of a linear form is matched against one
+diagonal coordinate. The substitution cancels that coordinate, updates
+the coefficients of all remaining linear forms, and leaves the previously
+eliminated prefix equal to zero. Iteration reduces the quadratic identity
+to its final two coordinates while preserving a nontrivial zero.
+\<close>
 
 definition brc_match_y :: "rat \<Rightarrow> rat \<Rightarrow> rat" where
   "brc_match_y A R =
@@ -3393,7 +3379,7 @@ proof -
     by blast
 qed
 
-subsubsection \<open>The case v = 4w + 1\<close>
+subsection \<open>The case v = 4w + 1\<close>
 
 text \<open>
 For order @{term "4 * w + 1 :: nat"}, the inverse four-square
@@ -3408,12 +3394,14 @@ context ordered_sym_bibd
 begin
 
 definition brc_tuple_component ::
-  "(rat \<times> rat \<times> rat \<times> rat) \<Rightarrow> nat \<Rightarrow> rat" where
+  "(rat \<times> rat \<times> rat \<times> rat) \<Rightarrow> nat \<Rightarrow> rat"
+where
   "brc_tuple_component t j =
-     (if j = 0 then one_of t
-      else if j = 1 then two_of t
-      else if j = 2 then three_of t
-      else four_of t)"
+     (case t of (t0,t1,t2,t3) \<Rightarrow>
+        if j = 0 then t0
+        else if j = 1 then t1
+        else if j = 2 then t2
+        else t3)"
 
 definition brc_inverse_y_block ::
   "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
@@ -3776,84 +3764,24 @@ lemma brc_inverse_y_block_add:
    brc_inverse_y_block a b c d y h j
    +
    brc_inverse_y_block a b c d z h j"
-proof (cases "j = 0")
-  case True
-
-  show ?thesis
-    using True
-    unfolding brc_inverse_y_block_def
-      brc_tuple_component_def
-    apply (simp only:
-        True if_True
-        y_inv_of.simps
-        y_inv_reversible.simps
-        snd_conv
-        one_of.simps)
-    apply (subst add_divide_distrib[symmetric])
-    apply (simp add: algebra_simps)
-    done
-next
-  case False
-
-  show ?thesis
-  proof (cases "j = 1")
-    case True
-
-    show ?thesis
-      using False True
-      unfolding brc_inverse_y_block_def
-        brc_tuple_component_def
-      apply (simp only:
-          False True
-          if_False if_True
-          y_inv_of.simps
-          y_inv_reversible.simps
-          snd_conv
-          two_of.simps)
-      apply (subst add_divide_distrib[symmetric])
-      apply (simp add: algebra_simps)
-      done
-  next
-    case False1: False
-
-    show ?thesis
-    proof (cases "j = 2")
-      case True2: True
-
-      show ?thesis
-        using False False1 True2
-        unfolding brc_inverse_y_block_def
-          brc_tuple_component_def
-        apply (simp only:
-            False False1 True2
-            if_False if_True
-            y_inv_of.simps
-            y_inv_reversible.simps
-            snd_conv
-            three_of.simps)
-        apply (subst add_divide_distrib[symmetric])
-        apply (simp add: algebra_simps)
-        done
-    next
-      case False2: False
-
-      show ?thesis
-        using False False1 False2
-        unfolding brc_inverse_y_block_def
-          brc_tuple_component_def
-        apply (simp only:
-            False False1 False2
-            if_False
-            y_inv_of.simps
-            y_inv_reversible.simps
-            snd_conv
-            four_of.simps)
-        apply (subst add_divide_distrib[symmetric])
-        apply (simp add: algebra_simps)
-        done
-    qed
-  qed
-qed
+  unfolding brc_inverse_y_block_def
+    brc_tuple_component_def
+  apply (cases "j = 0")
+   apply simp
+   apply (subst add_divide_distrib[symmetric])
+   apply (simp add: algebra_simps)
+  apply (cases "j = 1")
+   apply simp
+   apply (subst add_divide_distrib[symmetric])
+   apply (simp add: algebra_simps)
+  apply (cases "j = 2")
+   apply simp
+   apply (subst add_divide_distrib[symmetric])
+   apply (simp add: algebra_simps)
+  apply simp
+  apply (subst add_divide_distrib[symmetric])
+  apply (simp add: algebra_simps)
+  done
 
 lemma brc_inverse_y_block_scale:
   "brc_inverse_y_block a b c d
@@ -5014,7 +4942,7 @@ proof -
     by blast
 qed
 
-subsubsection \<open>The case v = 4w - 1\<close>
+subsection \<open>The case v = 4w - 1\<close>
 
 text \<open>
 For order @{term "4 * w - 1 :: nat"}, one auxiliary coordinate completes
@@ -6659,7 +6587,7 @@ proof -
     by blast
 qed
 
-subsubsection \<open>Clearing denominators and assembling the theorem\<close>
+subsection \<open>Clearing denominators and assembling the theorem\<close>
 
 text \<open>
 The elimination argument naturally yields rational witnesses.  A common
