@@ -1512,6 +1512,37 @@ definition rat_vec_zero ::
   "nat \<Rightarrow> rat" where
   "rat_vec_zero i = 0"
 
+lemma rat_additive_finite_sum:
+  fixes F :: "(nat \<Rightarrow> rat) \<Rightarrow> rat"
+  assumes finite: "finite S"
+  assumes zero: "F rat_vec_zero = 0"
+  assumes add:
+    "\<And>x y. F (\<lambda>i. x i + y i) = F x + F y"
+  shows
+    "F (\<lambda>i. \<Sum>j\<in>S. f j i) =
+     (\<Sum>j\<in>S. F (f j))"
+  using finite
+proof (induction S rule: finite_induct)
+  case empty
+
+  show ?case
+    using zero
+    unfolding rat_vec_zero_def
+    by simp
+next
+  case (insert j S)
+
+  have step:
+    "F (\<lambda>i. f j i + (\<Sum>k\<in>S. f k i)) =
+     F (f j) + F (\<lambda>i. \<Sum>k\<in>S. f k i)"
+    using add[of "f j" "\<lambda>i. \<Sum>k\<in>S. f k i"]
+    .
+
+  show ?case
+    using insert step
+    by simp
+qed
+
 definition rat_diagonal_form ::
   "nat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> rat" where
   "rat_diagonal_form n c x =
@@ -3260,28 +3291,21 @@ rational solution with the plus sign.
 context ordered_sym_bibd
 begin
 
-definition brc_tuple_component ::
-  "(rat \<times> rat \<times> rat \<times> rat) \<Rightarrow> nat \<Rightarrow> rat"
-where
-  "brc_tuple_component t j =
-     (case t of (t0,t1,t2,t3) \<Rightarrow>
-        if j = 0 then t0
-        else if j = 1 then t1
-        else if j = 2 then t2
-        else t3)"
-
 definition brc_inverse_y_block ::
   "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
    (nat \<Rightarrow> rat) \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> rat" where
   "brc_inverse_y_block a b c d y h j =
-     brc_tuple_component
-       (y_inv_of
-         ((a,b,c,d),
-          (y (4*h),
-           y (4*h+1),
-           y (4*h+2),
-           y (4*h+3))))
-       j"
+     (case y_inv_of
+        ((a,b,c,d),
+         (y (4*h),
+          y (4*h+1),
+          y (4*h+2),
+          y (4*h+3)))
+      of (t0,t1,t2,t3) \<Rightarrow>
+        if j = 0 then t0
+        else if j = 1 then t1
+        else if j = 2 then t2
+        else t3)"
 
 definition brc_x_from_y_plus ::
   "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
@@ -3368,7 +3392,6 @@ lemma brc_inverse_y_block_tuple:
        y (4*h+2),
        y (4*h+3)))"
   unfolding brc_inverse_y_block_def
-    brc_tuple_component_def
   by (cases
       "y_inv_of
         ((a,b,c,d),
@@ -3632,7 +3655,6 @@ lemma brc_inverse_y_block_add:
    +
    brc_inverse_y_block a b c d z h j"
   unfolding brc_inverse_y_block_def
-    brc_tuple_component_def
   apply (cases "j = 0")
    apply simp
    apply (subst add_divide_distrib[symmetric])
@@ -3656,7 +3678,6 @@ lemma brc_inverse_y_block_scale:
    =
    u * brc_inverse_y_block a b c d y h j"
   unfolding brc_inverse_y_block_def
-    brc_tuple_component_def
   by (auto simp:
       algebra_simps)
 
@@ -3747,40 +3768,24 @@ lemma brc_x_from_y_plus_sum:
      (\<Sum>j\<in>S.
         brc_x_from_y_plus a b c d w
           (f j) $$ (i,0))"
-  using finite
-proof (induction S rule: finite_induct)
-  case empty
+proof -
+  let ?F =
+    "\<lambda>y. brc_x_from_y_plus a b c d w y $$ (i,0)"
 
-  show ?case
-    using brc_x_from_y_plus_zero[
-      where i = i and a = a and b = b
-        and c = c and d = d and w = w,
-      OF i_bound]
-    unfolding rat_vec_zero_def
-    by simp
-next
-  case (insert j S)
-
-  have add:
-    "brc_x_from_y_plus a b c d w
-       (\<lambda>t. f j t + (\<Sum>k\<in>S. f k t)) $$ (i,0)
-     =
-     brc_x_from_y_plus a b c d w
-       (f j) $$ (i,0)
-     +
-     brc_x_from_y_plus a b c d w
-       (\<lambda>t. \<Sum>k\<in>S. f k t) $$ (i,0)"
-    using brc_x_from_y_plus_add[
-      where i = i and a = a and b = b
-        and c = c and d = d and w = w
-        and y = "f j"
-        and z = "\<lambda>t. \<Sum>k\<in>S. f k t",
-      OF i_bound]
+  have zero: "?F rat_vec_zero = 0"
+    using brc_x_from_y_plus_zero[OF i_bound]
     .
 
-  show ?case
-    using insert add
-    by simp
+  have add:
+    "\<And>x y. ?F (\<lambda>j. x j + y j) = ?F x + ?F y"
+    using brc_x_from_y_plus_add[OF i_bound]
+    .
+
+  show ?thesis
+    using rat_additive_finite_sum[
+      where F = ?F and S = S and f = f,
+      OF finite zero add]
+    .
 qed
 
 end
@@ -3799,11 +3804,15 @@ definition rat_basis_expansion ::
           y j * rat_unit_coordinate j t)"
 
 lemma rat_basis_expansion_inside:
-  assumes t_bound: "t < n"
-  shows "rat_basis_expansion n y t = y t"
+  assumes t_bound:
+    "t < n"
+  shows
+    "rat_basis_expansion n y t = y t"
 proof -
-  have t_mem: "t \<in> {0..<n}"
-    using t_bound by simp
+  have t_mem:
+    "t \<in> {0..<n}"
+    using t_bound
+    by simp
 
   have
     "(\<Sum>j\<in>{0..<n}. y j * (if t = j then 1 else 0)) =
@@ -5057,40 +5066,25 @@ lemma brc_extended_x_from_y_minus_sum:
      (\<Sum>j\<in>S.
         brc_extended_x_from_y_minus
           a b c d w (f j) i)"
-  using finite
-proof (induction S rule: finite_induct)
-  case empty
+proof -
+  let ?F =
+    "brc_extended_x_from_y_minus a b c d w"
 
-  show ?case
-    using brc_extended_x_from_y_minus_zero[
-      where i = i and a = a and b = b
-        and c = c and d = d and w = w,
-      OF i_bound]
-    unfolding rat_vec_zero_def
-    by simp
-next
-  case (insert j S)
-
-  have add:
-    "brc_extended_x_from_y_minus a b c d w
-       (\<lambda>t. f j t + (\<Sum>k\<in>S. f k t)) i
-     =
-     brc_extended_x_from_y_minus a b c d w
-       (f j) i
-     +
-     brc_extended_x_from_y_minus a b c d w
-       (\<lambda>t. \<Sum>k\<in>S. f k t) i"
-    using brc_extended_x_from_y_minus_add[
-      where i = i and a = a and b = b
-        and c = c and d = d and w = w
-        and y = "f j"
-        and z = "\<lambda>t. \<Sum>k\<in>S. f k t",
-      OF i_bound]
+  have zero: "?F rat_vec_zero i = 0"
+    using brc_extended_x_from_y_minus_zero[OF i_bound]
     .
 
-  show ?case
-    using insert add
-    by simp
+  have add:
+    "\<And>x y. ?F (\<lambda>j. x j + y j) i =
+       ?F x i + ?F y i"
+    using brc_extended_x_from_y_minus_add[OF i_bound]
+    .
+
+  show ?thesis
+    using rat_additive_finite_sum[
+      where F = "\<lambda>y. ?F y i" and S = S and f = f,
+      OF finite zero add]
+    .
 qed
 
 lemma brc_inverse_y_block_cong:
