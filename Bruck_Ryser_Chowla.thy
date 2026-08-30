@@ -3726,27 +3726,14 @@ lemma brc_x_from_y_plus_zero:
     "brc_x_from_y_plus a b c d w
        rat_vec_zero $$ (i,0)
      =
-     0"
-proof -
-  have scaled:
-    "brc_x_from_y_plus a b c d w
-       (\<lambda>j. (0::rat) * rat_vec_zero j) $$ (i,0)
-     =
-     (0::rat) *
-     brc_x_from_y_plus a b c d w
-       rat_vec_zero $$ (i,0)"
-    using brc_x_from_y_plus_scale[
-      where i = i and a = a and b = b
-        and c = c and d = d and w = w
-        and u = 0 and y = rat_vec_zero,
-      OF i_bound]
-    .
-
-  show ?thesis
-    using scaled
-    unfolding rat_vec_zero_def
-    by simp
-qed
+    0"
+  using brc_x_from_y_plus_scale[
+    where i = i and a = a and b = b
+      and c = c and d = d and w = w
+      and u = 0 and y = rat_vec_zero,
+    OF i_bound]
+  unfolding rat_vec_zero_def
+  by simp
 
 lemma brc_x_from_y_plus_sum:
   assumes finite:
@@ -3796,6 +3783,14 @@ next
     by simp
 qed
 
+end
+
+text \<open>
+The following finite-basis expansion is elementary rational linear
+algebra. It is stated outside the design locale and is used below only
+to expand the design-specific reconstruction map.
+\<close>
+
 definition rat_basis_expansion ::
   "nat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> nat \<Rightarrow> rat" where
   "rat_basis_expansion n y =
@@ -3804,54 +3799,26 @@ definition rat_basis_expansion ::
           y j * rat_unit_coordinate j t)"
 
 lemma rat_basis_expansion_inside:
-  assumes t_bound:
-    "t < n"
-  shows
-    "rat_basis_expansion n y t = y t"
+  assumes t_bound: "t < n"
+  shows "rat_basis_expansion n y t = y t"
 proof -
-  have t_mem:
-    "t \<in> {0..<n}"
-    using t_bound
-    by simp
+  have t_mem: "t \<in> {0..<n}"
+    using t_bound by simp
 
-  have finite:
-    "finite {0..<n}"
+  have
+    "(\<Sum>j\<in>{0..<n}. y j * (if t = j then 1 else 0)) =
+     (\<Sum>j\<in>{0..<n}. if j = t then y j else 0)"
+    by (rule sum.cong) auto
+  also have "... = y t"
+    using t_mem
     by simp
-
-  have split:
-    "(\<Sum>j\<in>{0..<n}.
-       y j * rat_unit_coordinate j t)
-     =
-     y t * rat_unit_coordinate t t +
-     (\<Sum>j\<in>{0..<n} - {t}.
-        y j * rat_unit_coordinate j t)"
-    using sum.remove[
-      OF finite t_mem,
-      of "\<lambda>j. y j * rat_unit_coordinate j t"]
-    by simp
-
-  have unit_at:
-    "rat_unit_coordinate t t = 1"
-    unfolding rat_unit_coordinate_def
-    by simp
-
-  have rest_zero:
-    "(\<Sum>j\<in>{0..<n} - {t}.
-       y j * rat_unit_coordinate j t)
-     =
-     0"
-  proof -
-    show ?thesis
-      apply (rule sum.neutral)
-      unfolding rat_unit_coordinate_def
-      by auto
-  qed
-
-  show ?thesis
-    unfolding rat_basis_expansion_def
-    using split unit_at rest_zero
-    by simp
+  finally show ?thesis
+    unfolding rat_basis_expansion_def rat_unit_coordinate_def
+    .
 qed
+
+context ordered_sym_bibd
+begin
 
 lemma brc_x_from_y_plus_cong:
   assumes v_form:
@@ -4550,6 +4517,14 @@ proof -
     .
 qed
 
+end
+
+text \<open>
+The following terminal elimination theorems depend only on the rational
+forms introduced above. They make no use of a block design and therefore
+belong outside @{locale ordered_sym_bibd}.
+\<close>
+
 lemma rat_weighted_elimination_terminal_general:
   fixes C :: "nat \<Rightarrow> nat \<Rightarrow> rat"
   fixes d W :: "nat \<Rightarrow> rat"
@@ -4809,6 +4784,9 @@ proof -
     by blast
 qed
 
+context ordered_sym_bibd
+begin
+
 subsection \<open>The case v = 4w - 1\<close>
 
 text \<open>
@@ -5059,26 +5037,13 @@ lemma brc_extended_x_from_y_minus_zero:
        a b c d w rat_vec_zero i
      =
      0"
-proof -
-  have scaled:
-    "brc_extended_x_from_y_minus a b c d w
-       (\<lambda>j. (0::rat) * rat_vec_zero j) i
-     =
-     (0::rat) *
-     brc_extended_x_from_y_minus
-       a b c d w rat_vec_zero i"
-    using brc_extended_x_from_y_minus_scale[
-      where i = i and a = a and b = b
-        and c = c and d = d and w = w
-        and u = 0 and y = rat_vec_zero,
-      OF i_bound]
-    .
-
-  show ?thesis
-    using scaled
-    unfolding rat_vec_zero_def
-    by simp
-qed
+  using brc_extended_x_from_y_minus_scale[
+    where i = i and a = a and b = b
+      and c = c and d = d and w = w
+      and u = 0 and y = rat_vec_zero,
+    OF i_bound]
+  unfolding rat_vec_zero_def
+  by simp
 
 lemma brc_extended_x_from_y_minus_sum:
   assumes finite:
@@ -6463,6 +6428,14 @@ quadratic equation preserves both the equality and nontriviality.  The
 final theorem then combines the two odd residue classes modulo four.
 \<close>
 
+end
+
+text \<open>
+The next two lemmas are generic facts about rational quadratic equations.
+They clear denominators without using any incidence-matrix or design
+assumption, so they are kept outside the design locale.
+\<close>
+
 lemma rat_as_int_quotient:
   fixes r :: rat
   obtains n d :: int where
@@ -6798,6 +6771,9 @@ proof -
     using int_nonzero int_equation
     by blast
 qed
+
+context ordered_sym_bibd
+begin
 
 lemma brc_sign_plus:
   assumes v_form:
