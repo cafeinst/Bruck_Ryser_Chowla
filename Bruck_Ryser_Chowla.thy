@@ -14,8 +14,12 @@ for the existence of a symmetric balanced incomplete block design with
 parameters v, k, and lambda. If v is even, then k minus lambda is a
 perfect square. If v is odd, then a corresponding nontrivial integral
 quadratic equation has a solution, with its sign determined by the
-residue of v modulo four. The formalization follows the proof presented 
-by Douglas R. Stinson in Combinatorial Designs: Constructions and Analysis.
+residue of v modulo four. The formalization follows the determinant and
+rational-elimination proof in D. R. Stinson, Combinatorial Designs:
+Constructions and Analysis, Springer, 2004, Chapter 2 (Symmetric BIBDs),
+especially Theorems 2.16 and 2.17. Each subsection below identifies the
+corresponding mathematical step; auxiliary algebra is stated outside the
+design locale.
 \<close>
 
 section \<open>Proof outline\<close>
@@ -92,7 +96,7 @@ proof -
 qed
 
 text \<open>
-\noindent The determinant of the incidence matrix multiplied by its transpose is
+The determinant of the incidence matrix multiplied by its transpose is
 the square of the determinant of the incidence matrix.
 \<close>
 
@@ -115,7 +119,7 @@ proof -
 qed
 
 text \<open>
-\noindent The known determinant formula for a regular pairwise balanced design
+The known determinant formula for a regular pairwise balanced design
 now simplifies because the design is symmetric and
 @{term "\<k> + \<Lambda> * (\<v> - 1) = \<k>^2"}.
 \<close>
@@ -231,7 +235,7 @@ lemma block_size_gt_index:
   by auto
 
 text \<open>
-\noindent When the order is even, @{term "\<v> - 1"} is odd.  The preceding
+When the order is even, @{term "\<v> - 1"} is odd.  The preceding
 determinant argument says that an odd power of @{term "sqrt (\<k> - \<Lambda>)"}
 is rational.  Since its square is already rational and nonzero, the
 square root itself must be rational.
@@ -302,7 +306,7 @@ proof -
 qed
 
 text \<open>
-\noindent The square root of a natural number is either a natural number or
+The square root of a natural number is either a natural number or
 irrational.  Its rationality therefore implies that it is a natural
 number, completing the even-order case.
 \<close>
@@ -343,7 +347,7 @@ context ordered_sym_bibd
 begin
 
 text \<open>
-\noindent We first derive the quadratic identity on which the odd-order argument
+We first derive the quadratic identity on which the odd-order argument
 is based.  The all-ones part of the incidence-matrix equation contributes
 the square of the sum of the coordinates, while the identity-matrix part
 contributes the sum of their squares.  Combining these evaluations with
@@ -468,7 +472,7 @@ proof -
 qed
 
 text \<open>
-\noindent Adding the preceding two evaluations gives the quadratic form associated
+Adding the preceding two evaluations gives the quadratic form associated
 with the decomposition of the incidence Gram matrix into its all-ones
 and identity-matrix components.
 \<close>
@@ -506,7 +510,7 @@ proof -
 qed
 
 text \<open>
-\noindent The entries of @{term "N * N\<^sup>T"} are inner products of rows of the
+The entries of @{term "N * N\<^sup>T"} are inner products of rows of the
 incidence matrix.  Expanding those entries converts the matrix quadratic
 form into a triple sum over rows and columns.  The incidence-matrix
 identity then evaluates that triple sum as the diagonal quadratic form
@@ -569,7 +573,7 @@ proof -
 qed
 
 text \<open>
-\noindent Expanding each squared incidence linear form and reordering the three
+Expanding each squared incidence linear form and reordering the three
 finite sums gives the quadratic form evaluated in
 @{thm incidence_gram_quadratic_identity}.  Symmetry supplies
 @{term "\<r> = \<k>"}.  The resulting identity says that the sum of the
@@ -629,224 +633,87 @@ Euler's four-square identity.  The forward map multiplies a four-vector by
 the quaternionic matrix determined by @{term "(a,b,c,d)"}; the inverse map
 uses its transpose and divides by @{term "a^2 + b^2 + c^2 + d^2"}.
 Consequently the squared norm is multiplied by that sum of four squares.
+The coefficient tuple is an argument of the maps rather than part of the
+transformed vector.
 \<close>
 
-fun y_reversible :: "((nat \<times> nat \<times> nat \<times> nat) \<times> (rat \<times> rat \<times> rat \<times> rat)) \<Rightarrow> 
-             ((nat \<times> nat \<times> nat \<times> nat) \<times> (rat \<times> rat \<times> rat \<times> rat))" where
-  "y_reversible((a, b, c, d),(x0, x1, x2, x3)) = ((a, b, c, d),
-   ( (of_nat a * x0 + of_nat b * x1 + of_nat c * x2 + of_nat d * x3),
-   (- of_nat b * x0 + of_nat a * x1 - of_nat d * x2 + of_nat c * x3),
-   (- of_nat c * x0 + of_nat d * x1 + of_nat a * x2 - of_nat b * x3),
-   (- of_nat d * x0 - of_nat c * x1 + of_nat b * x2 + of_nat a * x3)))"
-
-fun y_of :: "((nat \<times> nat \<times> nat \<times> nat) \<times> (rat \<times> rat \<times> rat \<times> rat)) \<Rightarrow> 
+fun y_of :: "((nat \<times> nat \<times> nat \<times> nat) \<times> 
+             (rat \<times> rat \<times> rat \<times> rat)) \<Rightarrow> 
                   (rat \<times> rat \<times> rat \<times> rat)" where
-  "y_of((a, b, c, d),(x0, x1, x2, x3)) = snd(y_reversible((a, b, c, d),(x0, x1, x2, x3)))"
+  "y_of((a, b, c, d),(x0, x1, x2, x3)) =
+   (of_nat a * x0 + of_nat b * x1 + of_nat c * x2 + of_nat d * x3,
+    - of_nat b * x0 + of_nat a * x1 - of_nat d * x2 + of_nat c * x3,
+    - of_nat c * x0 + of_nat d * x1 + of_nat a * x2 - of_nat b * x3,
+    - of_nat d * x0 - of_nat c * x1 + of_nat b * x2 + of_nat a * x3)"
 
-fun y_inv_reversible ::"((nat \<times> nat \<times> nat \<times> nat) \<times> (rat \<times> rat \<times> rat \<times> rat)) \<Rightarrow> 
-             ((nat \<times> nat \<times> nat \<times> nat) \<times> (rat \<times> rat \<times> rat \<times> rat))" where
-  "y_inv_reversible((a, b, c, d),(y0, y1, y2, y3)) = ((a, b, c, d),
-  ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3)/of_nat(a^2 + b^2 + c^2 + d^2), 
-  ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3)/of_nat(a^2 + b^2 + c^2 + d^2),
-  ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1)/of_nat(a^2 + b^2 + c^2 + d^2),
-  ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)/of_nat(a^2 + b^2 + c^2 + d^2))"
-
-fun y_inv_of :: "((nat \<times> nat \<times> nat \<times> nat) \<times> (rat \<times> rat \<times> rat \<times> rat)) \<Rightarrow> 
-                  (rat \<times> rat \<times> rat \<times> rat)" where
-  "y_inv_of((a, b, c, d),(y0, y1, y2, y3)) = 
-   snd(y_inv_reversible((a, b, c, d),(y0, y1, y2, y3)))"
+fun y_inv_of ::
+  "((nat \<times> nat \<times> nat \<times> nat) \<times>
+    (rat \<times> rat \<times> rat \<times> rat)) \<Rightarrow>
+   (rat \<times> rat \<times> rat \<times> rat)"
+where
+  "y_inv_of ((a, b, c, d), (y0, y1, y2, y3)) =
+   (((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) /
+      of_nat (a^2 + b^2 + c^2 + d^2),
+    ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) /
+      of_nat (a^2 + b^2 + c^2 + d^2),
+    ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) /
+      of_nat (a^2 + b^2 + c^2 + d^2),
+    ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2) /
+      of_nat (a^2 + b^2 + c^2 + d^2))"
 
 text \<open>
-\noindent Provided that the sum of the four coefficient squares is nonzero, the
+Provided that the sum of the four coefficient squares is nonzero, the
 inverse transformation is a right inverse of the forward four-square
 transformation.  This allows coordinates introduced by the four-square
 change of variables to be converted back into the original variables.
 \<close>
 
 lemma four_square_transform_inverse:
-  fixes a :: "nat"
-  fixes b :: "nat"
-  fixes c :: "nat"
-  fixes d :: "nat"
-  fixes y0 :: "rat"
-  fixes y1 :: "rat"
-  fixes y2 :: "rat"
-  fixes y3 :: "rat"
-  assumes "a^2 + b^2 + c^2 + d^2 \<noteq> 0"
-  shows "y_reversible(y_inv_reversible((a, b, c, d),(y0, y1, y2, y3))) = 
-         ((a, b, c, d),(y0, y1, y2, y3))"
-proof - 
-  have "y_inv_reversible((a, b, c, d),(y0, y1, y2, y3)) = ((a, b, c, d),
-   ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3)/of_nat(a^2 + b^2 + c^2 + d^2), 
-   ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3)/of_nat(a^2 + b^2 + c^2 + d^2),
-   ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1)/of_nat(a^2 + b^2 + c^2 + d^2),
-   ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)/of_nat(a^2 + b^2 + c^2 + d^2))" 
-      by simp
-  then have "y_reversible(y_inv_reversible((a, b, c, d),(y0, y1, y2, y3))) = 
-   y_reversible((a, b, c, d),
-   ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3)/of_nat(a^2 + b^2 + c^2 + d^2), 
-   ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3)/of_nat(a^2 + b^2 + c^2 + d^2),
-   ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1)/of_nat(a^2 + b^2 + c^2 + d^2),
-   ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)/of_nat(a^2 + b^2 + c^2 + d^2))" 
+  fixes a b c d :: nat
+  fixes y0 y1 y2 y3 :: rat
+  assumes nz: "a^2 + b^2 + c^2 + d^2 \<noteq> 0"
+  shows
+    "y_of ((a, b, c, d),
+       y_inv_of ((a, b, c, d), (y0, y1, y2, y3))) =
+     (y0, y1, y2, y3)"
+proof -
+  have cast_nz:
+    "(of_nat (a^2 + b^2 + c^2 + d^2) :: rat) \<noteq> 0"
+    using nz
+    by (simp only: of_nat_0_eq_iff)
+
+  have denominator_eq:
+    "rat_of_nat a * rat_of_nat a +
+       (rat_of_nat b * rat_of_nat b +
+        (rat_of_nat c * rat_of_nat c +
+         rat_of_nat d * rat_of_nat d)) =
+     (of_nat (a^2 + b^2 + c^2 + d^2) :: rat)"
+    by (simp only:
+          of_nat_add
+          of_nat_mult
+          power2_eq_square
+          add.assoc)
+
+  have denominator_nz:
+    "rat_of_nat a * rat_of_nat a +
+       (rat_of_nat b * rat_of_nat b +
+        (rat_of_nat c * rat_of_nat c +
+         rat_of_nat d * rat_of_nat d)) \<noteq> 0"
+    using cast_nz denominator_eq
     by simp
-  then have key: "y_reversible(y_inv_reversible((a, b, c, d),(y0, y1, y2, y3))) = 
-   ((a, b, c, d),
-   (of_nat a * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3)/
-    of_nat(a^2 + b^2 + c^2 + d^2) + 
-    of_nat b * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3)/
-    of_nat(a^2 + b^2 + c^2 + d^2) + 
-    of_nat c * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1)/
-    of_nat(a^2 + b^2 + c^2 + d^2) + 
-    of_nat d * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)/
-    of_nat(a^2 + b^2 + c^2 + d^2),
-    -of_nat b * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3)/
-    of_nat(a^2 + b^2 + c^2 + d^2) + 
-    of_nat a * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3)/
-    of_nat(a^2 + b^2 + c^2 + d^2) - 
-    of_nat d * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1)/
-    of_nat(a^2 + b^2 + c^2 + d^2) + 
-    of_nat c * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)/
-    of_nat(a^2 + b^2 + c^2 + d^2),
-    -of_nat c * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3)/
-    of_nat(a^2 + b^2 + c^2 + d^2) +
-    of_nat d * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3)/
-    of_nat(a^2 + b^2 + c^2 + d^2) +
-    of_nat a * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1)/
-    of_nat(a^2 + b^2 + c^2 + d^2) -
-    of_nat b * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)/
-    of_nat(a^2 + b^2 + c^2 + d^2),
-    -of_nat d * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3)/
-    of_nat(a^2 + b^2 + c^2 + d^2) -
-    of_nat c * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3)/
-    of_nat(a^2 + b^2 + c^2 + d^2) +
-    of_nat b * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1)/
-    of_nat(a^2 + b^2 + c^2 + d^2) +
-    of_nat a * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)/
-    of_nat(a^2 + b^2 + c^2 + d^2)))"
-    by auto
 
-  have "of_nat a * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) +
-     of_nat b * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) +
-     of_nat c * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) +
-     of_nat d * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2) = 
-    of_nat(a^2 + b^2 + c^2 + d^2) * y0"
-    by (simp add: power2_eq_square algebra_simps)
-
-  then have
-     "(of_nat a * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) +
-     of_nat b * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) +
-     of_nat c * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) +
-     of_nat d * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) = y0 * of_nat(a^2 + b^2 + c^2 + d^2)/ 
-     of_nat(a^2 + b^2 + c^2 + d^2)"
-    using assms by (simp add: algebra_simps)
-
-  then have first_component_simplified: 
-     "of_nat a * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) +
-     of_nat b * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) +
-     of_nat c * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) +
-     of_nat d * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2) / 
-    of_nat(a^2 + b^2 + c^2 + d^2) = y0"
-   using assms by (smt (verit, best) add_divide_distrib diff_divide_distrib
-      nonzero_eq_divide_eq of_nat_0 of_nat_0_eq_iff)
-
-  have "-of_nat b * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) +
-     of_nat a * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) -
-     of_nat d * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) +
-     of_nat c * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2) = 
-    of_nat(a^2 + b^2 + c^2 + d^2) *y1"
-    by (simp add: power2_eq_square algebra_simps)
-
-  then have
-    "(-of_nat b * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) +
-     of_nat a * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) -
-     of_nat d * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) +
-     of_nat c * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) = y1 * of_nat(a^2 + b^2 + c^2 + d^2)/ 
-     of_nat(a^2 + b^2 + c^2 + d^2)"
-    using assms by (simp add: algebra_simps)
-
-  then have second_component_simplified:
-    "-of_nat b * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) +
-     of_nat a * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) -
-     of_nat d * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) +
-     of_nat c * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) = y1"
-   using assms by (smt (verit, best) add_divide_distrib diff_divide_distrib
-      nonzero_eq_divide_eq of_nat_0 of_nat_0_eq_iff)
-
-  have "-of_nat c * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) + 
-     of_nat d * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) +
-     of_nat a * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) -
-     of_nat b * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2) = 
-     of_nat(a^2 + b^2 + c^2 + d^2) * y2"
-    by (simp add: power2_eq_square algebra_simps)
-
-  then have 
-    "(-of_nat c * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) +
-     of_nat d * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) +
-     of_nat a * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) -
-     of_nat b * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) = y2 * of_nat(a^2 + b^2 + c^2 + d^2)/ 
-     of_nat(a^2 + b^2 + c^2 + d^2)"
-    using assms by (simp add: algebra_simps)
-
-  then have third_component_simplified:
-    "-of_nat c * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) +
-     of_nat d * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) +
-     of_nat a * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) -
-     of_nat b * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) = y2"
-   using assms by (smt (verit, best) add_divide_distrib diff_divide_distrib
-      nonzero_eq_divide_eq of_nat_0 of_nat_0_eq_iff)
-
-  have "-of_nat d * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) -
-     of_nat c * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) +
-     of_nat b * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) +
-     of_nat a * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2) = 
-     of_nat(a^2 + b^2 + c^2 + d^2) * y3"
-    by (simp add: power2_eq_square algebra_simps)
-
-  then have 
-    "(-of_nat d * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) -
-     of_nat c * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) +
-     of_nat b * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) +
-     of_nat a * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2)) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) = y3 * of_nat(a^2 + b^2 + c^2 + d^2)/ 
-     of_nat(a^2 + b^2 + c^2 + d^2)"
-    using assms by (simp add: algebra_simps)
-
-  then have fourth_component_simplified:
-    "-of_nat d * ((of_nat a)*y0 - (of_nat b)*y1 - (of_nat c)*y2 - (of_nat d)*y3) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) -
-     of_nat c * ((of_nat b)*y0 + (of_nat a)*y1 + (of_nat d)*y2 - (of_nat c)*y3) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) +
-     of_nat b * ((of_nat c)*y0 + (of_nat a)*y2 + (of_nat b)*y3 - (of_nat d)*y1) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) +
-     of_nat a * ((of_nat d)*y0 + (of_nat c)*y1 + (of_nat a)*y3 - (of_nat b)*y2) / 
-     of_nat(a^2 + b^2 + c^2 + d^2) = y3"
-   using assms by (smt (verit, best) add_divide_distrib diff_divide_distrib
-      nonzero_eq_divide_eq of_nat_0 of_nat_0_eq_iff)
-
-  then have "y_reversible(y_inv_reversible((a, b, c, d),(y0, y1, y2, y3))) = 
-         ((a, b, c, d),(y0, y1, y2, y3))"
-  using first_component_simplified second_component_simplified 
-       third_component_simplified fourth_component_simplified key by auto
-  thus ?thesis 
-    by simp
+  show ?thesis
+    using denominator_nz
+    by (simp add:
+          add_divide_distrib [symmetric]
+          diff_divide_distrib [symmetric]
+          power2_eq_square
+          algebra_simps;
+        simp add: distrib_left [symmetric])
 qed
 
 text \<open>
-\noindent The forward four-square transformation multiplies the squared norm of
+The forward four-square transformation multiplies the squared norm of
 a four-coordinate vector by the sum of the four coefficient squares.
 This is the algebraic identity that permits the coordinates of the
 quadratic form to be processed in blocks of four.
@@ -882,7 +749,7 @@ proof
 qed
 
 text \<open>
-\noindent Specializing the four-square norm identity to a representation
+Specializing the four-square norm identity to a representation
 @{term "\<k> - \<Lambda> = a^2 + b^2 + c^2 + d^2"} shows that the transformed
 squared norm is exactly @{term "\<k> - \<Lambda>"} times the original squared norm.
 \<close>
@@ -902,7 +769,7 @@ lemma four_square_norm_identity_block_difference:
   by simp
 
 text \<open>
-\noindent Writing the four transformed coordinates separately, their squared sum
+Writing the four transformed coordinates separately, their squared sum
 equals @{term "\<k> - \<Lambda>"} times the squared sum of the corresponding four
 original coordinates.
 \<close>
@@ -2720,7 +2587,7 @@ proof -
 qed
 
 text \<open>
-\noindent This is the single-step invariant for rational elimination.  Assuming
+This is the single-step invariant for rational elimination.  Assuming
 that the first q coordinates have already been eliminated, the matching
 substitution cancels coordinate q, preserves the earlier zero prefix,
 and rewrites the weighted sum of squared linear forms as the same
@@ -2956,7 +2823,7 @@ proof -
 qed
 
 text \<open>
-\noindent Induction on the elimination stage now iterates the preceding one-step
+Induction on the elimination stage now iterates the preceding one-step
 invariant.  After q stages, the first q coordinates vanish, the
 coefficient arrays record the accumulated substitutions, and the
 weighted quadratic identity remains valid.
@@ -3275,7 +3142,7 @@ definition rat_unit_coordinate ::
      (\<lambda>j. if j = k then 1 else 0)"
 
 text \<open>
-\noindent After all nonterminal coordinates have been eliminated, the surviving
+After all nonterminal coordinates have been eliminated, the surviving
 weighted identity involves only the final two linear forms and one
 diagonal coordinate.  Choosing that coordinate to be one guarantees
 that the resulting rational solution is nontrivial.
@@ -7067,7 +6934,7 @@ proof -
 qed
 
 text \<open>
-\noindent Every odd natural number is congruent to either 1 or 3 modulo 4.
+Every odd natural number is congruent to either 1 or 3 modulo 4.
 The preceding results supply an integer solution with a plus sign in the
 first case and a minus sign in the second.  The corresponding power of
 -1 rewrites these two equations as one uniform statement.
