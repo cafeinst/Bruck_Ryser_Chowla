@@ -6,7 +6,7 @@ theory Bruck_Ryser_Chowla imports
   Fishers_Inequality.Fishers_Inequality SumSquares.FourSquares Pell.Pell 
 begin 
 
-section "The Bruck-Ryser-Chowla theorem"
+section \<open>The Bruck-Ryser-Chowla theorem\<close>
 
 text \<open>
 The Bruck-Ryser-Chowla theorem gives necessary arithmetic conditions
@@ -19,15 +19,7 @@ rational-elimination proof in D. R. Stinson, Combinatorial Designs:
 Constructions and Analysis, Springer, 2004, Chapter 2 (Symmetric BIBDs),
 especially Theorems 2.16 and 2.17. Each subsection below identifies the
 corresponding mathematical step; auxiliary algebra is stated outside the
-design locale.
-\<close>
-
-section \<open>Proof outline\<close>
-
-text \<open>
-This theory formalizes the Bruck-Ryser-Chowla theorem for symmetric
-balanced incomplete block designs. The proof proceeds through the
-following stages:
+design locale. The proof proceeds through the following stages:
 
 \<^enum> \<^bold>\<open>Even order.\<close>
 The determinant of the incidence-matrix identity is used to prove that
@@ -65,6 +57,80 @@ The two congruence classes modulo four are combined into the standard
 Bruck-Ryser-Chowla equation.
 \<close>
 
+text \<open>
+Vectors occurring in the quadratic identities are represented as
+one-column matrices only at the interface with matrix multiplication.
+The notation below denotes the entry in row i of a one-column matrix
+while suppressing its constant column index.
+\<close>
+
+abbreviation column_entry :: "'a mat \<Rightarrow> nat \<Rightarrow> 'a"
+    (infixl "$$\<^sub>v" 100) where
+  "x $$\<^sub>v i \<equiv> x $$ (i,0)"
+
+definition column_matrix ::
+  "nat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> rat mat" where
+  "column_matrix n x =
+     mat n 1 (\<lambda>(i,j). if j = 0 then x i else 0)"
+
+lemma dim_row_column_matrix [simp]:
+  "dim_row (column_matrix n x) = n"
+  unfolding column_matrix_def
+  by simp
+
+lemma dim_col_column_matrix [simp]:
+  "dim_col (column_matrix n x) = 1"
+  unfolding column_matrix_def
+  by simp
+
+lemma column_matrix_index [simp]:
+  assumes "i < n"
+  shows "column_matrix n x $$\<^sub>v (i) = x i"
+  using assms
+  unfolding column_matrix_def
+  by simp
+
+text \<open>
+Finite sums of functions are pointwise.  This elementary bridge is kept
+outside the design locale; it is used below to pass between an explicit
+coordinate sum and the additive finite-sum theorem from the library.
+\<close>
+
+lemma finite_sum_functions:
+  fixes f :: "'a \<Rightarrow> nat \<Rightarrow> rat"
+  assumes finite: "finite S"
+  shows
+    "(\<lambda>t. \<Sum>j\<in>S. f j t)
+     =
+     (\<Sum>j\<in>S. (\<lambda>t. f j t))"
+  using finite
+proof induction
+  case empty
+  show ?case
+    by (rule ext, simp)
+next
+  case (insert j S)
+
+  show ?case
+  proof (rule ext)
+    fix t
+
+    have induction_at_t:
+      "(\<lambda>t. \<Sum>j\<in>S. f j t) t
+       =
+       (\<Sum>j\<in>S. (\<lambda>t. f j t)) t"
+      using fun_cong[OF insert.IH, of t]
+      .
+
+    show
+      "(\<lambda>t. \<Sum>j\<in>insert j S. f j t) t
+       =
+       (\<Sum>j\<in>insert j S. (\<lambda>t. f j t)) t"
+      using insert.hyps induction_at_t
+      by simp
+  qed
+qed
+
 context ordered_sym_bibd
 begin
 
@@ -73,7 +139,8 @@ subsection \<open>Even order: the determinant argument\<close>
 text \<open>
 For a symmetric design, the replication number equals the block size.
 Combining this with the standard parameter relation gives the identity
-needed to simplify the determinant of the incidence-matrix product.
+needed to simplify the determinant of the incidence-matrix product.  This
+subsection formalizes the determinant argument of Stinson, Theorem 2.16.
 \<close>
 
 lemma symmetric_design_parameter_relation:
@@ -360,9 +427,9 @@ lemma all_ones_quadratic_form:
   shows
     "(\<Sum>j\<in>{0..<\<v>}. \<Sum>h\<in>{0..<\<v>}.
        (of_nat \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v>) $$ (j,h) *
-       x $$ (j,0) * x $$ (h,0))
+       x $$\<^sub>v (j) * x $$\<^sub>v (h))
      =
-     of_nat \<Lambda> * (\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))^2"
+     of_nat \<Lambda> * (\<Sum>j\<in>{0..<\<v>}. x $$\<^sub>v (j))^2"
 proof -
   have J:
     "(of_nat \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v>) $$ (j,h) = of_nat \<Lambda>"
@@ -374,38 +441,38 @@ proof -
   have
     "(\<Sum>j\<in>{0..<\<v>}. \<Sum>h\<in>{0..<\<v>}.
        (of_nat \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v>) $$ (j,h) *
-       x $$ (j,0) * x $$ (h,0))
+       x $$\<^sub>v (j) * x $$\<^sub>v (h))
      =
      (\<Sum>j=0..<\<v>. \<Sum>h=0..<\<v>.
-       of_nat \<Lambda> * x $$ (j,0) * x $$ (h,0))"
+       of_nat \<Lambda> * x $$\<^sub>v (j) * x $$\<^sub>v (h))"
     using J
     by simp
   also have
     "... =
      (\<Sum>j=0..<\<v>. \<Sum>h=0..<\<v>.
-       of_nat \<Lambda> * (x $$ (j,0) * x $$ (h,0)))"
+       of_nat \<Lambda> * (x $$\<^sub>v (j) * x $$\<^sub>v (h)))"
     by (simp add: algebra_simps)
   also have
     "... =
      (\<Sum>j\<in>{0..<\<v>}.
        of_nat \<Lambda> *
-       (\<Sum>h\<in>{0..<\<v>}. x $$ (j,0) * x $$ (h,0)))"
+       (\<Sum>h\<in>{0..<\<v>}. x $$\<^sub>v (j) * x $$\<^sub>v (h)))"
     by (simp add: sum_distrib_left)
   also have
     "... =
      of_nat \<Lambda> *
      (\<Sum>j\<in>{0..<\<v>}.
-       \<Sum>h\<in>{0..<\<v>}. x $$ (j,0) * x $$ (h,0))"
+       \<Sum>h\<in>{0..<\<v>}. x $$\<^sub>v (j) * x $$\<^sub>v (h))"
     by (simp add: sum_distrib_left)
   also have
     "... =
      of_nat \<Lambda> *
-     ((\<Sum>j\<in>{0..<\<v>}. x $$ (j,0)) *
-      (\<Sum>h\<in>{0..<\<v>}. x $$ (h,0)))"
+     ((\<Sum>j\<in>{0..<\<v>}. x $$\<^sub>v (j)) *
+      (\<Sum>h\<in>{0..<\<v>}. x $$\<^sub>v (h)))"
     by (metis sum_product)
   also have
     "... =
-     of_nat \<Lambda> * (\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))^2"
+     of_nat \<Lambda> * (\<Sum>j\<in>{0..<\<v>}. x $$\<^sub>v (j))^2"
     by (metis power2_eq_square)
   finally show ?thesis .
 qed
@@ -415,19 +482,19 @@ lemma identity_matrix_quadratic_form:
   shows
     "(\<Sum>j<\<v>. \<Sum>h<\<v>.
        (rat_of_nat (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (j,h) *
-       x $$ (j,0) * x $$ (h,0))
+       x $$\<^sub>v (j) * x $$\<^sub>v (h))
      =
      rat_of_nat (\<r> - \<Lambda>) *
-     (\<Sum>j<\<v>. (x $$ (j,0))^2)"
+     (\<Sum>j<\<v>. (x $$\<^sub>v (j))^2)"
 proof -
   have diagonal_entry:
     "rat_of_nat (\<r> - \<Lambda>) *
        (if j = h then 1 else 0) *
-       x $$ (j,0) * x $$ (h,0)
+       x $$\<^sub>v (j) * x $$\<^sub>v (h)
      =
      (if j = h
       then rat_of_nat (\<r> - \<Lambda>) *
-           x $$ (j,0) * x $$ (h,0)
+           x $$\<^sub>v (j) * x $$\<^sub>v (h)
       else 0)"
     for j h
     by auto
@@ -435,12 +502,12 @@ proof -
   have
     "(\<Sum>j<\<v>. \<Sum>h<\<v>.
        (rat_of_nat (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (j,h) *
-       x $$ (j,0) * x $$ (h,0))
+       x $$\<^sub>v (j) * x $$\<^sub>v (h))
      =
      (\<Sum>j<\<v>. \<Sum>h<\<v>.
        rat_of_nat (\<r> - \<Lambda>) *
        (if j = h then 1 else 0) *
-       x $$ (j,0) * x $$ (h,0))"
+       x $$\<^sub>v (j) * x $$\<^sub>v (h))"
     unfolding one_mat_def
     by simp
   also have
@@ -448,24 +515,24 @@ proof -
      (\<Sum>j<\<v>. \<Sum>h<\<v>.
        if j = h
        then rat_of_nat (\<r> - \<Lambda>) *
-            x $$ (j,0) * x $$ (h,0)
+            x $$\<^sub>v (j) * x $$\<^sub>v (h)
        else 0)"
     by (subst diagonal_entry, simp)
   also have
     "... =
      (\<Sum>j<\<v>.
        rat_of_nat (\<r> - \<Lambda>) *
-       x $$ (j,0) * x $$ (j,0))"
+       x $$\<^sub>v (j) * x $$\<^sub>v (j))"
     by simp
   also have
     "... =
      rat_of_nat (\<r> - \<Lambda>) *
-     (\<Sum>j<\<v>. x $$ (j,0) * x $$ (j,0))"
+     (\<Sum>j<\<v>. x $$\<^sub>v (j) * x $$\<^sub>v (j))"
     by (simp add: sum_distrib_left mult.assoc)
   also have
     "... =
      rat_of_nat (\<r> - \<Lambda>) *
-     (\<Sum>j<\<v>. (x $$ (j,0))^2)"
+     (\<Sum>j<\<v>. (x $$\<^sub>v (j))^2)"
     unfolding power2_eq_square
     by simp
   finally show ?thesis .
@@ -480,29 +547,29 @@ and identity-matrix components.
 lemma incidence_diagonal_quadratic_form:
   fixes x :: "rat mat"
   shows "(\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}. 
-    ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0)))) +
+    ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$\<^sub>v (j) * x $$\<^sub>v (h)))) +
     (\<Sum>j \<in> {0..<\<v>}.(\<Sum>h \<in> {0..<\<v>}.(of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * 
-    x $$ (j, 0) * x $$ (h, 0))) = of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$ (j, 0)))^2 + 
-    of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0))^2)"
+    x $$\<^sub>v (j) * x $$\<^sub>v (h))) = of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$\<^sub>v (j)))^2 + 
+    of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
 proof -
-  have lam: "(\<Sum>j \<in>{0..<\<v>} .(\<Sum>h \<in>{0..<\<v>} .(of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0))) =
-    of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$ (j, 0)))^2"
+  have lam: "(\<Sum>j \<in>{0..<\<v>} .(\<Sum>h \<in>{0..<\<v>} .(of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$\<^sub>v (j) * x $$\<^sub>v (h))) =
+    of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$\<^sub>v (j)))^2"
   proof -
     have "(of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v> :: rat mat)) = (of_nat \<Lambda> \<cdot>\<^sub>m (J\<^sub>m \<v> :: rat mat))"
       by simp
     then show ?thesis using all_ones_quadratic_form by fastforce
   qed
-  have ord: "(\<Sum>j \<in>{0..<\<v>} .(\<Sum>h \<in>{0..<\<v>}.(of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0))) =
-        of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0))^2)"
+  have ord: "(\<Sum>j \<in>{0..<\<v>} .(\<Sum>h \<in>{0..<\<v>}.(of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * x $$\<^sub>v (j) * x $$\<^sub>v (h))) =
+        of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
   proof -
     have eq: "(of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v> :: rat mat)) = (rat_of_nat (\<r> - \<Lambda>) \<cdot>\<^sub>m (1\<^sub>m \<v> :: rat mat))"
       by simp
-    have "(\<Sum>j \<in>{0..<\<v>} .(\<Sum>h \<in>{0..<\<v>}.(of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0))) =
-          (\<Sum>j \<in>{0..<\<v>} .(\<Sum>h \<in>{0..<\<v>}.(rat_of_nat (\<r> - \<Lambda>) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0)))"
+    have "(\<Sum>j \<in>{0..<\<v>} .(\<Sum>h \<in>{0..<\<v>}.(of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * x $$\<^sub>v (j) * x $$\<^sub>v (h))) =
+          (\<Sum>j \<in>{0..<\<v>} .(\<Sum>h \<in>{0..<\<v>}.(rat_of_nat (\<r> - \<Lambda>) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * x $$\<^sub>v (j) * x $$\<^sub>v (h)))"
       using eq by metis
-    also have "... = rat_of_nat (\<r> - \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0))^2)"
+    also have "... = rat_of_nat (\<r> - \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
       using identity_matrix_quadratic_form[of x] by (simp add: atLeast0LessThan)
-    also have "... = of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0))^2)"
+    also have "... = of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
       by simp
     finally show ?thesis .
   qed
@@ -520,9 +587,9 @@ derived above.
 lemma incidence_gram_quadratic_identity:
   fixes x :: "rat mat"
   shows "(\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}. (\<Sum>i \<in> {0..<\<v>}.  
-    of_int (N $$ (j,i)) * of_int (N $$ (h,i))) * x $$ (j,0) * x $$ (h,0))) =
-     of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$ (j, 0)))^2 +
-     of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0))^2)"
+    of_int (N $$ (j,i)) * of_int (N $$ (h,i))) * x $$\<^sub>v (j) * x $$\<^sub>v (h))) =
+     of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$\<^sub>v (j)))^2 +
+     of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
 proof -
   have matdef: "(\<Sum>i \<in>{0..<\<v>} . 
     of_int (N $$ (j,i)) * of_int (N $$ (h,i))) = of_int ((N * N\<^sup>T) $$ (j, h))" 
@@ -544,30 +611,30 @@ proof -
     finally show ?thesis .
   qed
   have "(\<Sum>i \<in> {0..<\<v>}. 
-    of_int (N $$ (j, i)) * of_int (N $$ (h, i))) * x $$ (j, 0) * x $$ (h, 0) = 
+    of_int (N $$ (j, i)) * of_int (N $$ (h, i))) * x $$\<^sub>v (j) * x $$\<^sub>v (h) = 
     ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>) + of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h)) * 
-    x $$ (j, 0) * x $$ (h, 0)" if "h < \<v>" "j < \<v>" for h j
+    x $$\<^sub>v (j) * x $$\<^sub>v (h)" if "h < \<v>" "j < \<v>" for h j
     using sum_eq_rLambda[OF that] by simp
   then have "(\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}. (\<Sum>i \<in> {0..<\<v>}. 
-    of_int (N $$ (j, i)) * of_int (N $$ (h, i))) * x $$ (j, 0) * x $$ (h, 0))) = 
+    of_int (N $$ (j, i)) * of_int (N $$ (h, i))) * x $$\<^sub>v (j) * x $$\<^sub>v (h))) = 
     (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}. 
     ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>) + of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h)) *
-     x $$ (j, 0) * x $$ (h, 0)))" by (intro sum.mono_neutral_cong_right) auto
+     x $$\<^sub>v (j) * x $$\<^sub>v (h)))" by (intro sum.mono_neutral_cong_right) auto
   also have "... = (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}. 
-    ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0)) +
-    (of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0)))"
+    ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$\<^sub>v (j) * x $$\<^sub>v (h)) +
+    (of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * x $$\<^sub>v (j) * x $$\<^sub>v (h)))"
     by (simp add: algebra_simps sum_distrib_left sum_distrib_right)
   also have "... = (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}. 
-    ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0))) +
+    ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$\<^sub>v (j) * x $$\<^sub>v (h))) +
     (\<Sum>h \<in> {0..<\<v>}.(of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * 
-    x $$ (j, 0) * x $$ (h, 0)))" by (simp add: sum.distrib)
+    x $$\<^sub>v (j) * x $$\<^sub>v (h)))" by (simp add: sum.distrib)
   also have "... = (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}. 
-    ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$ (j, 0) * x $$ (h, 0)))) +
+    ((of_int (int \<Lambda>) \<cdot>\<^sub>m (J\<^sub>m \<v>)) $$ (j, h) * x $$\<^sub>v (j) * x $$\<^sub>v (h)))) +
     (\<Sum>j \<in> {0..<\<v>}.(\<Sum>h \<in> {0..<\<v>}. (of_int (int (\<r> - \<Lambda>)) \<cdot>\<^sub>m (1\<^sub>m \<v>)) $$ (j, h) * 
-    x $$ (j, 0) * x $$ (h, 0)))" 
+    x $$\<^sub>v (j) * x $$\<^sub>v (h)))" 
     by (simp add: sum.distrib)
-  also have final_equ:  "... = of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$ (j, 0)))^2 + 
-     of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0))^2)"
+  also have final_equ:  "... = of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$\<^sub>v (j)))^2 + 
+     of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
     using incidence_diagonal_quadratic_form by simp
   finally show ?thesis .
 qed
@@ -585,40 +652,40 @@ transformations used in both odd congruence cases.
 
 lemma brc_x_equation:
   fixes x :: "rat mat"
-  shows "(\<Sum>i \<in> {0..<\<v>}.(\<Sum>h \<in> {0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h,0))^2) =
-     of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$ (j, 0)))^2 +
-     of_int (int (\<k> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0))^2)"
+  shows "(\<Sum>i \<in> {0..<\<v>}.(\<Sum>h \<in> {0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2) =
+     of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$\<^sub>v (j)))^2 +
+     of_int (int (\<k> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
 proof -
   have r_eq_k: "\<r> = \<k>" using rep_value_sym by simp
-  have "(\<Sum>i \<in> {0..<\<v>}.(\<Sum>h \<in> {0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h,0))^2) =
+  have "(\<Sum>i \<in> {0..<\<v>}.(\<Sum>h \<in> {0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2) =
     (\<Sum>i \<in> {0..<\<v>}. (\<Sum>j \<in> {0..<\<v>}. of_int (N $$ (j, i)) *
-    x $$ (j, 0)) * (\<Sum>h \<in> {0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h, 0)))"
+    x $$\<^sub>v (j)) * (\<Sum>h \<in> {0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h)))"
     by (simp add: power2_eq_square)
   also have "... = (\<Sum>i \<in> {0..<\<v>}. (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}.
-    (of_int (N $$ (j, i)) * x $$ (j,0)) * (of_int (N $$ (h,i)) * x $$ (h,0)))))"
+    (of_int (N $$ (j, i)) * x $$\<^sub>v (j)) * (of_int (N $$ (h,i)) * x $$\<^sub>v (h)))))"
     by (metis (no_types) sum_product)
   also have "... = (\<Sum>i \<in> {0..<\<v>}. (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}.
-    of_int (N $$ (j, i)) * (x $$ (j,0) * of_int (N $$ (h,i))) * x $$ (h,0))))"
+    of_int (N $$ (j, i)) * (x $$\<^sub>v (j) * of_int (N $$ (h,i))) * x $$\<^sub>v (h))))"
     by (simp add: algebra_simps)
   also have "... = (\<Sum>i \<in> {0..<\<v>}. (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}.
-    of_int (N $$ (j, i)) * (of_int (N $$ (h,i)) * x $$ (j,0)) * x $$ (h,0))))"
+    of_int (N $$ (j, i)) * (of_int (N $$ (h,i)) * x $$\<^sub>v (j)) * x $$\<^sub>v (h))))"
     by (metis (no_types, lifting) mult_of_int_commute sum.cong)
   also have "... = (\<Sum>i \<in> {0..<\<v>}. (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}.
-    of_int (N $$ (j, i)) * of_int (N $$ (h,i)) * x $$ (j,0) * x $$ (h,0))))"
+    of_int (N $$ (j, i)) * of_int (N $$ (h,i)) * x $$\<^sub>v (j) * x $$\<^sub>v (h))))"
     by (simp add: algebra_simps)
   also have "... = (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}. (\<Sum>i \<in> {0..<\<v>}.  
-    of_int (N $$ (j, i)) * of_int (N $$ (h,i)) * x $$ (j,0) * x $$ (h,0))))"
+    of_int (N $$ (j, i)) * of_int (N $$ (h,i)) * x $$\<^sub>v (j) * x $$\<^sub>v (h))))"
     using sum_reorder_triple[of "\<lambda> i j h . of_int (N $$ (j, i)) * of_int (N $$ (h,i)) * 
-        x $$ (j,0) * x $$ (h,0)" "{0..<\<v>}" "{0..<\<v>}" "{0..<\<v>}"] 
+        x $$\<^sub>v (j) * x $$\<^sub>v (h)" "{0..<\<v>}" "{0..<\<v>}" "{0..<\<v>}"] 
     by blast
   also have "... = (\<Sum>j \<in> {0..<\<v>}. (\<Sum>h \<in> {0..<\<v>}. (\<Sum>i \<in> {0..<\<v>}.  
-    of_int (N $$ (j, i)) * of_int (N $$ (h,i))) * x $$ (j,0) * x $$ (h,0)))"
+    of_int (N $$ (j, i)) * of_int (N $$ (h,i))) * x $$\<^sub>v (j) * x $$\<^sub>v (h)))"
     by (simp add: algebra_simps sum_distrib_left sum_distrib_right)
-  also have "... = of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$ (j, 0)))^2 +
-     of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0))^2)"
+  also have "... = of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}.(x $$\<^sub>v (j)))^2 +
+     of_int (int (\<r> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
     using incidence_gram_quadratic_identity by simp
-  also have "... = of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0)))^2 +
-     of_int (int (\<k> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$ (j, 0))^2)"
+  also have "... = of_int (int \<Lambda>) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j)))^2 +
+     of_int (int (\<k> - \<Lambda>)) * (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
     using r_eq_k by simp
   finally show ?thesis .
 qed
@@ -737,7 +804,7 @@ context ordered_sym_bibd
 begin
 
 definition t_of :: "rat mat \<Rightarrow> rat" where
-  "t_of x = (\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))"
+  "t_of x = (\<Sum>j\<in>{0..<\<v>}. x $$\<^sub>v (j))"
 
 lemma brc_v_eq_4w_plus_1:
   assumes "\<v> mod 4 = 1"
@@ -802,32 +869,32 @@ lemma four_square_indexed_block_identity:
   assumes abcd: "\<k> - \<Lambda> = a^2 + b^2 + c^2 + d^2"
   shows
     "of_nat (\<k> - \<Lambda>) *
-      ((x $$ (4*h,0))^2 +
-       (x $$ (4*h + 1,0))^2 +
-       (x $$ (4*h + 2,0))^2 +
-       (x $$ (4*h + 3,0))^2)
+      ((x $$\<^sub>v (4*h))^2 +
+       (x $$\<^sub>v (4*h + 1))^2 +
+       (x $$\<^sub>v (4*h + 2))^2 +
+       (x $$\<^sub>v (4*h + 3))^2)
      =
      (fst (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))^2 +
+        (x $$\<^sub>v (4*h), x $$\<^sub>v (4*h + 1), x $$\<^sub>v (4*h + 2), x $$\<^sub>v (4*h + 3)))))^2 +
      (fst (snd (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0))))))^2 +
+        (x $$\<^sub>v (4*h), x $$\<^sub>v (4*h + 1), x $$\<^sub>v (4*h + 2), x $$\<^sub>v (4*h + 3))))))^2 +
      (fst (snd (snd (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))))^2 +
+        (x $$\<^sub>v (4*h), x $$\<^sub>v (4*h + 1), x $$\<^sub>v (4*h + 2), x $$\<^sub>v (4*h + 3)))))))^2 +
      (snd (snd (snd (y_of ((a,b,c,d),
-        (x $$ (4*h,0), x $$ (4*h + 1,0), x $$ (4*h + 2,0), x $$ (4*h + 3,0)))))))^2"
+        (x $$\<^sub>v (4*h), x $$\<^sub>v (4*h + 1), x $$\<^sub>v (4*h + 2), x $$\<^sub>v (4*h + 3)))))))^2"
   using four_square_block_sum_identity[OF abcd,
-      of "x $$ (4*h,0)"
-         "x $$ (4*h + 1,0)"
-         "x $$ (4*h + 2,0)"
-         "x $$ (4*h + 3,0)"]
+      of "x $$\<^sub>v (4*h)"
+         "x $$\<^sub>v (4*h + 1)"
+         "x $$\<^sub>v (4*h + 2)"
+         "x $$\<^sub>v (4*h + 3)"]
   by simp
 
 definition x_block_sqsum :: "rat mat \<Rightarrow> nat \<Rightarrow> rat" where
   "x_block_sqsum x h =
-     (x $$ (4*h,0))^2 +
-     (x $$ (4*h + 1,0))^2 +
-     (x $$ (4*h + 2,0))^2 +
-     (x $$ (4*h + 3,0))^2"
+     (x $$\<^sub>v (4*h))^2 +
+     (x $$\<^sub>v (4*h + 1))^2 +
+     (x $$\<^sub>v (4*h + 2))^2 +
+     (x $$\<^sub>v (4*h + 3))^2"
 
 definition y_block_sqsum ::
   "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
@@ -835,10 +902,10 @@ definition y_block_sqsum ::
 where
   "y_block_sqsum a b c d x h =
      (case y_of ((a,b,c,d),
-        (x $$ (4*h,0),
-         x $$ (4*h + 1,0),
-         x $$ (4*h + 2,0),
-         x $$ (4*h + 3,0)))
+        (x $$\<^sub>v (4*h),
+         x $$\<^sub>v (4*h + 1),
+         x $$\<^sub>v (4*h + 2),
+         x $$\<^sub>v (4*h + 3)))
       of (y0,y1,y2,y3) \<Rightarrow>
          y0^2 + y1^2 + y2^2 + y3^2)"
 
@@ -880,9 +947,9 @@ lemma brc_x_sqsum_split_last:
   fixes x :: "rat mat"
   assumes v_form: "\<v> = 4 * w + 1"
   shows
-    "(\<Sum>j\<in>{0..<\<v>}. (x $$ (j,0))^2)
+    "(\<Sum>j\<in>{0..<\<v>}. (x $$\<^sub>v (j))^2)
      =
-     (\<Sum>j\<in>{0..<4*w}. (x $$ (j,0))^2) + (x $$ (4*w,0))^2"
+     (\<Sum>j\<in>{0..<4*w}. (x $$\<^sub>v (j))^2) + (x $$\<^sub>v (4*w))^2"
 proof -
   have "\<v> = Suc (4*w)"
     using v_form by simp
@@ -894,9 +961,9 @@ lemma brc_x_sum_split_last:
   fixes x :: "rat mat"
   assumes v_form: "\<v> = 4 * w + 1"
   shows
-    "(\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))
+    "(\<Sum>j\<in>{0..<\<v>}. x $$\<^sub>v (j))
      =
-     (\<Sum>j\<in>{0..<4*w}. x $$ (j,0)) + x $$ (4*w,0)"
+     (\<Sum>j\<in>{0..<4*w}. x $$\<^sub>v (j)) + x $$\<^sub>v (4*w)"
 proof -
   have "\<v> = Suc (4*w)"
     using v_form by simp
@@ -909,38 +976,38 @@ lemma brc_x_equation_split_last_coordinate:
   assumes v_form: "\<v> = 4 * w + 1"
   shows
    "(\<Sum>i\<in>{0..<\<v>}.
-      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
     =
     of_nat \<Lambda> *
-      ((\<Sum>j\<in>{0..<4*w}. x $$ (j,0))
-        + x $$ (4*w,0))^2
+      ((\<Sum>j\<in>{0..<4*w}. x $$\<^sub>v (j))
+        + x $$\<^sub>v (4*w))^2
     +
     of_nat (\<k> - \<Lambda>) *
-      ((\<Sum>j\<in>{0..<4*w}. (x $$ (j,0))^2)
-        + (x $$ (4*w,0))^2)"
+      ((\<Sum>j\<in>{0..<4*w}. (x $$\<^sub>v (j))^2)
+        + (x $$\<^sub>v (4*w))^2)"
 proof -
   have eq:
     "(\<Sum>i\<in>{0..<\<v>}.
-    (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+    (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
     =
-    of_nat \<Lambda> * (\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))^2
+    of_nat \<Lambda> * (\<Sum>j\<in>{0..<\<v>}. x $$\<^sub>v (j))^2
     +
-    of_nat (\<k> - \<Lambda>) * (\<Sum>j\<in>{0..<\<v>}. (x $$ (j,0))^2)"
+    of_nat (\<k> - \<Lambda>) * (\<Sum>j\<in>{0..<\<v>}. (x $$\<^sub>v (j))^2)"
     using brc_x_equation[of x]
     by simp
 
   have sq:
-    "(\<Sum>j\<in>{0..<\<v>}. (x $$ (j,0))^2)
+    "(\<Sum>j\<in>{0..<\<v>}. (x $$\<^sub>v (j))^2)
      =
-     (\<Sum>j\<in>{0..<4*w}. (x $$ (j,0))^2)
-      + (x $$ (4*w,0))^2"
+     (\<Sum>j\<in>{0..<4*w}. (x $$\<^sub>v (j))^2)
+      + (x $$\<^sub>v (4*w))^2"
     using brc_x_sqsum_split_last[OF v_form] .
 
   have lin:
-    "(\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))
+    "(\<Sum>j\<in>{0..<\<v>}. x $$\<^sub>v (j))
      =
-     (\<Sum>j\<in>{0..<4*w}. x $$ (j,0))
-      + x $$ (4*w,0)"
+     (\<Sum>j\<in>{0..<4*w}. x $$\<^sub>v (j))
+      + x $$\<^sub>v (4*w)"
     using brc_x_sum_split_last[OF v_form] .
 
   show ?thesis
@@ -949,20 +1016,20 @@ proof -
 qed
 
 definition x_head_sum :: "rat mat \<Rightarrow> nat \<Rightarrow> rat" where
-  "x_head_sum x w = (\<Sum>j\<in>{0..<4*w}. x $$ (j,0))"
+  "x_head_sum x w = (\<Sum>j\<in>{0..<4*w}. x $$\<^sub>v (j))"
 
 definition x_head_sqsum :: "rat mat \<Rightarrow> nat \<Rightarrow> rat" where
-  "x_head_sqsum x w = (\<Sum>j\<in>{0..<4*w}. (x $$ (j,0))^2)"
+  "x_head_sqsum x w = (\<Sum>j\<in>{0..<4*w}. (x $$\<^sub>v (j))^2)"
 
 definition x_last :: "rat mat \<Rightarrow> nat \<Rightarrow> rat" where
-  "x_last x w = x $$ (4*w,0)"
+  "x_last x w = x $$\<^sub>v (4*w)"
 
 lemma brc_x_equation_head_last:
   fixes x :: "rat mat"
   assumes v_form: "\<v> = 4 * w + 1"
   shows
    "(\<Sum>i\<in>{0..<\<v>}.
-      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
     =
     of_nat \<Lambda> * (x_head_sum x w + x_last x w)^2
     +
@@ -997,7 +1064,7 @@ lemma brc_x_equation_transformed_from_block_partition:
     "x_head_sqsum x w = (\<Sum>h\<in>{0..<w}. x_block_sqsum x h)"
   shows
    "(\<Sum>i\<in>{0..<\<v>}.
-      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
     =
     of_nat \<Lambda> * (x_head_sum x w + x_last x w)^2
     +
@@ -1007,7 +1074,7 @@ lemma brc_x_equation_transformed_from_block_partition:
 proof -
   have split_eq:
    "(\<Sum>i\<in>{0..<\<v>}.
-      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
     =
     of_nat \<Lambda> * (x_head_sum x w + x_last x w)^2
     +
@@ -1069,7 +1136,7 @@ next
      =
      x_head_sqsum x n + x_block_sqsum x n"
     unfolding x_head_sqsum_def x_block_sqsum_def
-    using sum_four_block_Suc[of "\<lambda>j. (x $$ (j,0))^2" n]
+    using sum_four_block_Suc[of "\<lambda>j. (x $$\<^sub>v (j))^2" n]
     by (simp add: algebra_simps)
 
   show ?case
@@ -1084,7 +1151,7 @@ lemma brc_x_equation_transformed:
   assumes abcd: "\<k> - \<Lambda> = a^2 + b^2 + c^2 + d^2"
   shows
    "(\<Sum>i\<in>{0..<\<v>}.
-      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h,0))^2)
+      (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
     =
     of_nat \<Lambda> * (x_head_sum x w + x_last x w)^2
     +
@@ -1103,7 +1170,7 @@ definition brc_yv :: "rat mat \<Rightarrow> nat \<Rightarrow> rat" where
 
 definition brc_L :: "rat mat \<Rightarrow> nat \<Rightarrow> rat" where
   "brc_L x i =
-     (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$ (h,0))"
+     (\<Sum>h\<in>{0..<\<v>}. of_int (N $$ (h,i)) * x $$\<^sub>v (h))"
 
 lemma brc_x_equation_in_linear_forms:
   fixes a b c d :: nat
@@ -1128,23 +1195,23 @@ lemma brc_x_equation_with_auxiliary_coordinate:
   shows
     "(\<Sum>i \<in> {0..<\<v>}.
        (\<Sum>h \<in> {0..<\<v>}.
-          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+          of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
        + of_int (int (\<k> - \<Lambda>)) * xv1^2
      =
        of_int (int \<Lambda>) *
-         (\<Sum>j \<in> {0..<\<v>}. x $$ (j,0))^2
+         (\<Sum>j \<in> {0..<\<v>}. x $$\<^sub>v (j))^2
        + of_int (int (\<k> - \<Lambda>)) *
-         ((\<Sum>j \<in> {0..<\<v>}. (x $$ (j,0))^2) + xv1^2)"
+         ((\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2) + xv1^2)"
 proof -
   have base:
     "(\<Sum>i \<in> {0..<\<v>}.
        (\<Sum>h \<in> {0..<\<v>}.
-          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+          of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
      =
        of_int (int \<Lambda>) *
-         (\<Sum>j \<in> {0..<\<v>}. x $$ (j,0))^2
+         (\<Sum>j \<in> {0..<\<v>}. x $$\<^sub>v (j))^2
        + of_int (int (\<k> - \<Lambda>)) *
-         (\<Sum>j \<in> {0..<\<v>}. (x $$ (j,0))^2)"
+         (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2)"
     using brc_x_equation[of x] .
 
   show ?thesis
@@ -1154,26 +1221,26 @@ qed
 
 definition brc_extend_x :: "rat mat \<Rightarrow> rat \<Rightarrow> rat mat" where
   "brc_extend_x x xv1 =
-     mat (\<v> + 1) 1
-       (\<lambda>(i,j). if i < \<v> then x $$ (i,0) else xv1)"
+     column_matrix (\<v> + 1)
+       (\<lambda>i. if i < \<v> then x $$\<^sub>v (i) else xv1)"
 
-lemma brc_extend_x_old:
+lemma brc_extend_x_initial:
   assumes "i < \<v>"
-  shows "brc_extend_x x xv1 $$ (i,0) = x $$ (i,0)"
+  shows "brc_extend_x x xv1 $$\<^sub>v (i) = x $$\<^sub>v (i)"
   using assms
   unfolding brc_extend_x_def
   by simp
 
 lemma brc_extend_x_last:
-  shows "brc_extend_x x xv1 $$ (\<v>,0) = xv1"
+  shows "brc_extend_x x xv1 $$\<^sub>v (\<v>) = xv1"
   unfolding brc_extend_x_def
   by simp
 
 lemma brc_extend_x_sqsum:
   "(\<Sum>i\<in>{0..<\<v> + 1}.
-      (brc_extend_x x xv1 $$ (i,0))^2)
+      (brc_extend_x x xv1 $$\<^sub>v (i))^2)
    =
-   (\<Sum>i\<in>{0..<\<v>}. (x $$ (i,0))^2) + xv1^2"
+   (\<Sum>i\<in>{0..<\<v>}. (x $$\<^sub>v (i))^2) + xv1^2"
 proof -
   have split:
     "{0..<\<v> + 1} = {0..<\<v>} \<union> {\<v>}"
@@ -1185,18 +1252,18 @@ proof -
 
   have
     "(\<Sum>i\<in>{0..<\<v> + 1}.
-        (brc_extend_x x xv1 $$ (i,0))^2)
+        (brc_extend_x x xv1 $$\<^sub>v (i))^2)
      =
      (\<Sum>i\<in>{0..<\<v>}.
-        (brc_extend_x x xv1 $$ (i,0))^2)
-       + (brc_extend_x x xv1 $$ (\<v>,0))^2"
+        (brc_extend_x x xv1 $$\<^sub>v (i))^2)
+       + (brc_extend_x x xv1 $$\<^sub>v (\<v>))^2"
     using split disj
     by (simp add: sum.union_disjoint)
 
   also have
     "... =
-     (\<Sum>i\<in>{0..<\<v>}. (x $$ (i,0))^2) + xv1^2"
-    using brc_extend_x_old brc_extend_x_last
+     (\<Sum>i\<in>{0..<\<v>}. (x $$\<^sub>v (i))^2) + xv1^2"
+    using brc_extend_x_initial brc_extend_x_last
     by (intro arg_cong2[where f="(+)"]) auto
 
   finally show ?thesis .
@@ -1244,32 +1311,32 @@ lemma brc_x_equation_for_extended_vector:
   shows
     "(\<Sum>i \<in> {0..<\<v>}.
        (\<Sum>h \<in> {0..<\<v>}.
-          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+          of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
        + of_int (int (\<k> - \<Lambda>)) * xv1^2
      =
        of_int (int \<Lambda>) *
-         (\<Sum>j \<in> {0..<\<v>}. x $$ (j,0))^2
+         (\<Sum>j \<in> {0..<\<v>}. x $$\<^sub>v (j))^2
        + of_int (int (\<k> - \<Lambda>)) *
          (\<Sum>j \<in> {0..<\<v> + 1}.
-            (brc_extend_x x xv1 $$ (j,0))^2)"
+            (brc_extend_x x xv1 $$\<^sub>v (j))^2)"
 proof -
   have ext:
     "(\<Sum>j \<in> {0..<\<v> + 1}.
-       (brc_extend_x x xv1 $$ (j,0))^2)
+       (brc_extend_x x xv1 $$\<^sub>v (j))^2)
      =
-     (\<Sum>j \<in> {0..<\<v>}. (x $$ (j,0))^2) + xv1^2"
+     (\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2) + xv1^2"
     using brc_extend_x_sqsum[of x xv1] .
 
   have base:
     "(\<Sum>i \<in> {0..<\<v>}.
        (\<Sum>h \<in> {0..<\<v>}.
-          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+          of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
        + of_int (int (\<k> - \<Lambda>)) * xv1^2
      =
        of_int (int \<Lambda>) *
-         (\<Sum>j \<in> {0..<\<v>}. x $$ (j,0))^2
+         (\<Sum>j \<in> {0..<\<v>}. x $$\<^sub>v (j))^2
        + of_int (int (\<k> - \<Lambda>)) *
-         ((\<Sum>j \<in> {0..<\<v>}. (x $$ (j,0))^2) + xv1^2)"
+         ((\<Sum>j \<in> {0..<\<v>}. (x $$\<^sub>v (j))^2) + xv1^2)"
     using brc_x_equation_with_auxiliary_coordinate[of x xv1] .
 
   show ?thesis
@@ -1282,13 +1349,13 @@ lemma brc_extend_x_sqsum_blocks:
   assumes w_pos: "0 < w"
   shows
     "(\<Sum>i\<in>{0..<\<v> + 1}.
-       (brc_extend_x x xv1 $$ (i,0))^2)
+       (brc_extend_x x xv1 $$\<^sub>v (i))^2)
      =
      (\<Sum>h\<in>{0..<w}.
-       ((brc_extend_x x xv1 $$ (4*h,0))^2 +
-        (brc_extend_x x xv1 $$ (4*h+1,0))^2 +
-        (brc_extend_x x xv1 $$ (4*h+2,0))^2 +
-        (brc_extend_x x xv1 $$ (4*h+3,0))^2))"
+       ((brc_extend_x x xv1 $$\<^sub>v (4*h))^2 +
+        (brc_extend_x x xv1 $$\<^sub>v (4*h+1))^2 +
+        (brc_extend_x x xv1 $$\<^sub>v (4*h+2))^2 +
+        (brc_extend_x x xv1 $$\<^sub>v (4*h+3))^2))"
 proof -
   have size:
     "\<v> + 1 = 4 * w"
@@ -1296,15 +1363,15 @@ proof -
 
   have blocks:
     "(\<Sum>i\<in>{0..<4*w}.
-       (brc_extend_x x xv1 $$ (i,0))^2)
+       (brc_extend_x x xv1 $$\<^sub>v (i))^2)
      =
      (\<Sum>h\<in>{0..<w}.
-       ((brc_extend_x x xv1 $$ (4*h,0))^2 +
-        (brc_extend_x x xv1 $$ (4*h+1,0))^2 +
-        (brc_extend_x x xv1 $$ (4*h+2,0))^2 +
-        (brc_extend_x x xv1 $$ (4*h+3,0))^2))"
+       ((brc_extend_x x xv1 $$\<^sub>v (4*h))^2 +
+        (brc_extend_x x xv1 $$\<^sub>v (4*h+1))^2 +
+        (brc_extend_x x xv1 $$\<^sub>v (4*h+2))^2 +
+        (brc_extend_x x xv1 $$\<^sub>v (4*h+3))^2))"
     using sum_four_blocks[
-      of "\<lambda>i. (brc_extend_x x xv1 $$ (i,0))^2" w] .
+      of "\<lambda>i. (brc_extend_x x xv1 $$\<^sub>v (i))^2" w] .
 
   from blocks show ?thesis
     using size
@@ -1322,7 +1389,7 @@ lemma brc_extend_x_transformed_blocks:
   shows
     "of_nat (\<k> - \<Lambda>) *
        (\<Sum>i\<in>{0..<\<v> + 1}.
-          (brc_extend_x x xv1 $$ (i,0))^2)
+          (brc_extend_x x xv1 $$\<^sub>v (i))^2)
      =
      (\<Sum>h\<in>{0..<w}.
         y_block_sqsum a b c d
@@ -1330,20 +1397,20 @@ lemma brc_extend_x_transformed_blocks:
 proof -
   have blocks:
     "(\<Sum>i\<in>{0..<\<v> + 1}.
-       (brc_extend_x x xv1 $$ (i,0))^2)
+       (brc_extend_x x xv1 $$\<^sub>v (i))^2)
      =
      (\<Sum>h\<in>{0..<w}.
         x_block_sqsum (brc_extend_x x xv1) h)"
   proof -
     have split:
       "(\<Sum>i\<in>{0..<\<v> + 1}.
-         (brc_extend_x x xv1 $$ (i,0))^2)
+         (brc_extend_x x xv1 $$\<^sub>v (i))^2)
        =
        (\<Sum>h\<in>{0..<w}.
-         ((brc_extend_x x xv1 $$ (4*h,0))^2 +
-          (brc_extend_x x xv1 $$ (4*h+1,0))^2 +
-          (brc_extend_x x xv1 $$ (4*h+2,0))^2 +
-          (brc_extend_x x xv1 $$ (4*h+3,0))^2))"
+         ((brc_extend_x x xv1 $$\<^sub>v (4*h))^2 +
+          (brc_extend_x x xv1 $$\<^sub>v (4*h+1))^2 +
+          (brc_extend_x x xv1 $$\<^sub>v (4*h+2))^2 +
+          (brc_extend_x x xv1 $$\<^sub>v (4*h+3))^2))"
       using brc_extend_x_sqsum_blocks[
         OF v_form w_pos, of x xv1] .
 
@@ -1367,7 +1434,7 @@ proof -
   have
     "of_nat (\<k> - \<Lambda>) *
        (\<Sum>i\<in>{0..<\<v> + 1}.
-          (brc_extend_x x xv1 $$ (i,0))^2)
+          (brc_extend_x x xv1 $$\<^sub>v (i))^2)
      =
      of_nat (\<k> - \<Lambda>) *
        (\<Sum>h\<in>{0..<w}.
@@ -1404,11 +1471,11 @@ lemma brc_x_equation_minus_transformed:
   shows
     "(\<Sum>i\<in>{0..<\<v>}.
        (\<Sum>h\<in>{0..<\<v>}.
-          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+          of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
        + of_nat (\<k> - \<Lambda>) * xv1^2
      =
        of_nat \<Lambda> *
-         (\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))^2
+         (\<Sum>j\<in>{0..<\<v>}. x $$\<^sub>v (j))^2
        +
        (\<Sum>h\<in>{0..<w}.
           y_block_sqsum a b c d
@@ -1417,22 +1484,22 @@ proof -
   have base:
     "(\<Sum>i\<in>{0..<\<v>}.
        (\<Sum>h\<in>{0..<\<v>}.
-          of_int (N $$ (h,i)) * x $$ (h,0))^2)
+          of_int (N $$ (h,i)) * x $$\<^sub>v (h))^2)
        + of_nat (\<k> - \<Lambda>) * xv1^2
      =
        of_nat \<Lambda> *
-         (\<Sum>j\<in>{0..<\<v>}. x $$ (j,0))^2
+         (\<Sum>j\<in>{0..<\<v>}. x $$\<^sub>v (j))^2
        +
        of_nat (\<k> - \<Lambda>) *
          (\<Sum>j\<in>{0..<\<v> + 1}.
-            (brc_extend_x x xv1 $$ (j,0))^2)"
+            (brc_extend_x x xv1 $$\<^sub>v (j))^2)"
     using brc_x_equation_for_extended_vector[of x xv1]
     by simp
 
   have transformed:
     "of_nat (\<k> - \<Lambda>) *
        (\<Sum>j\<in>{0..<\<v> + 1}.
-          (brc_extend_x x xv1 $$ (j,0))^2)
+          (brc_extend_x x xv1 $$\<^sub>v (j))^2)
      =
        (\<Sum>h\<in>{0..<w}.
           y_block_sqsum a b c d
@@ -1455,7 +1522,8 @@ cases. At one stage a square of a linear form is matched against one
 diagonal coordinate. The substitution cancels that coordinate, updates
 the coefficients of all remaining linear forms, and leaves the previously
 eliminated prefix equal to zero. Iteration reduces the quadratic identity
-to its final two coordinates while preserving a nontrivial zero.
+to its final two coordinates while preserving a nontrivial zero.  This is
+the rational-elimination step in the proof of Stinson, Theorem 2.17.
 \<close>
 
 definition brc_match_y :: "rat \<Rightarrow> rat \<Rightarrow> rat" where
@@ -1511,37 +1579,6 @@ definition brc_match_coeff :: "rat \<Rightarrow> rat \<Rightarrow> rat" where
 definition rat_vec_zero ::
   "nat \<Rightarrow> rat" where
   "rat_vec_zero i = 0"
-
-lemma rat_additive_finite_sum:
-  fixes F :: "(nat \<Rightarrow> rat) \<Rightarrow> rat"
-  assumes finite: "finite S"
-  assumes zero: "F rat_vec_zero = 0"
-  assumes add:
-    "\<And>x y. F (\<lambda>i. x i + y i) = F x + F y"
-  shows
-    "F (\<lambda>i. \<Sum>j\<in>S. f j i) =
-     (\<Sum>j\<in>S. F (f j))"
-  using finite
-proof (induction S rule: finite_induct)
-  case empty
-
-  show ?case
-    using zero
-    unfolding rat_vec_zero_def
-    by simp
-next
-  case (insert j S)
-
-  have step:
-    "F (\<lambda>i. f j i + (\<Sum>k\<in>S. f k i)) =
-     F (f j) + F (\<lambda>i. \<Sum>k\<in>S. f k i)"
-    using add[of "f j" "\<lambda>i. \<Sum>k\<in>S. f k i"]
-    .
-
-  show ?case
-    using insert step
-    by simp
-qed
 
 definition rat_diagonal_form ::
   "nat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> rat" where
@@ -3311,10 +3348,9 @@ definition brc_x_from_y_plus ::
   "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
    nat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> rat mat" where
   "brc_x_from_y_plus a b c d w y =
-     mat \<v> 1
-       (\<lambda>(i,j).
-          if j \<noteq> 0 then 0
-          else if i < 4*w then
+     column_matrix \<v>
+       (\<lambda>i.
+          if i < 4*w then
             brc_inverse_y_block
               a b c d y (i div 4) (i mod 4)
           else
@@ -3329,7 +3365,7 @@ lemma brc_x_from_y_plus_block:
     "j < 4"
   shows
     "brc_x_from_y_plus a b c d w y
-       $$ (4*h+j,0)
+       $$\<^sub>v (4*h+j)
      =
      brc_inverse_y_block a b c d y h j"
 proof -
@@ -3364,7 +3400,7 @@ lemma brc_x_from_y_plus_last:
     "\<v> = 4 * w + 1"
   shows
     "brc_x_from_y_plus a b c d w y
-       $$ (4*w,0)
+       $$\<^sub>v (4*w)
      =
      y (4*w)"
 proof -
@@ -3466,7 +3502,7 @@ proof -
     "brc_x_from_y_plus a b c d w y"
 
   have x0:
-    "?x $$ (4*h,0)
+    "?x $$\<^sub>v (4*h)
      =
      brc_inverse_y_block a b c d y h 0"
     using brc_x_from_y_plus_block[
@@ -3477,7 +3513,7 @@ proof -
     by simp
 
   have x1:
-    "?x $$ (4*h+1,0)
+    "?x $$\<^sub>v (4*h+1)
      =
      brc_inverse_y_block a b c d y h 1"
     using brc_x_from_y_plus_block[
@@ -3488,7 +3524,7 @@ proof -
     by simp
 
   have x2:
-    "?x $$ (4*h+2,0)
+    "?x $$\<^sub>v (4*h+2)
      =
      brc_inverse_y_block a b c d y h 2"
     using brc_x_from_y_plus_block[
@@ -3499,7 +3535,7 @@ proof -
     by simp
 
   have x3:
-    "?x $$ (4*h+3,0)
+    "?x $$\<^sub>v (4*h+3)
      =
      brc_inverse_y_block a b c d y h 3"
     using brc_x_from_y_plus_block[
@@ -3512,10 +3548,10 @@ proof -
   have forward:
     "y_of
       ((a,b,c,d),
-       (?x $$ (4*h,0),
-        ?x $$ (4*h+1,0),
-        ?x $$ (4*h+2,0),
-        ?x $$ (4*h+3,0)))
+       (?x $$\<^sub>v (4*h),
+        ?x $$\<^sub>v (4*h+1),
+        ?x $$\<^sub>v (4*h+2),
+        ?x $$\<^sub>v (4*h+3)))
      =
      (y (4*h),
       y (4*h+1),
@@ -3686,11 +3722,11 @@ lemma brc_x_from_y_plus_add:
     "i < \<v>"
   shows
     "brc_x_from_y_plus a b c d w
-       (\<lambda>j. y j + z j) $$ (i,0)
+       (\<lambda>j. y j + z j) $$\<^sub>v (i)
      =
-     brc_x_from_y_plus a b c d w y $$ (i,0)
+     brc_x_from_y_plus a b c d w y $$\<^sub>v (i)
      +
-     brc_x_from_y_plus a b c d w z $$ (i,0)"
+     brc_x_from_y_plus a b c d w z $$\<^sub>v (i)"
 proof (cases "i < 4*w")
   case True
 
@@ -3716,10 +3752,10 @@ lemma brc_x_from_y_plus_scale:
     "i < \<v>"
   shows
     "brc_x_from_y_plus a b c d w
-       (\<lambda>j. u * y j) $$ (i,0)
+       (\<lambda>j. u * y j) $$\<^sub>v (i)
      =
      u *
-     brc_x_from_y_plus a b c d w y $$ (i,0)"
+     brc_x_from_y_plus a b c d w y $$\<^sub>v (i)"
 proof (cases "i < 4*w")
   case True
 
@@ -3740,51 +3776,44 @@ next
     by simp
 qed
 
-lemma brc_x_from_y_plus_zero:
-  assumes i_bound:
-    "i < \<v>"
-  shows
-    "brc_x_from_y_plus a b c d w
-       rat_vec_zero $$ (i,0)
-     =
-    0"
-  using brc_x_from_y_plus_scale[
-    where i = i and a = a and b = b
-      and c = c and d = d and w = w
-      and u = 0 and y = rat_vec_zero,
-    OF i_bound]
-  unfolding rat_vec_zero_def
-  by simp
-
 lemma brc_x_from_y_plus_sum:
-  assumes finite:
-    "finite S"
-  assumes i_bound:
-    "i < \<v>"
+  assumes i_bound: "i < \<v>"
   shows
     "brc_x_from_y_plus a b c d w
-       (\<lambda>t. \<Sum>j\<in>S. f j t) $$ (i,0)
+       (\<Sum>j\<in>S. f j) $$\<^sub>v (i)
      =
      (\<Sum>j\<in>S.
-        brc_x_from_y_plus a b c d w
-          (f j) $$ (i,0))"
+        brc_x_from_y_plus a b c d w (f j) $$\<^sub>v (i))"
 proof -
   let ?F =
-    "\<lambda>y. brc_x_from_y_plus a b c d w y $$ (i,0)"
+    "\<lambda>(y :: nat \<Rightarrow> rat).
+       brc_x_from_y_plus a b c d w y $$\<^sub>v (i)"
 
-  have zero: "?F rat_vec_zero = 0"
-    using brc_x_from_y_plus_zero[OF i_bound]
-    .
+  have additive_F: "additive ?F"
+    unfolding additive_def
+  proof (intro allI)
+    fix x y :: "nat \<Rightarrow> rat"
 
-  have add:
-    "\<And>x y. ?F (\<lambda>j. x j + y j) = ?F x + ?F y"
-    using brc_x_from_y_plus_add[OF i_bound]
+    have xy:
+      "x + y = (\<lambda>j. x j + y j)"
+      by (rule ext, simp)
+
+    show
+      "brc_x_from_y_plus a b c d w (x + y) $$\<^sub>v (i) =
+       brc_x_from_y_plus a b c d w x $$\<^sub>v (i) +
+       brc_x_from_y_plus a b c d w y $$\<^sub>v (i)"
+      unfolding xy
+      by (rule brc_x_from_y_plus_add[OF i_bound])
+  qed
+
+  have mapped:
+    "?F (\<Sum>j\<in>S. f j) =
+     (\<Sum>j\<in>S. ?F (f j))"
+    using Modules.additive.sum[OF additive_F, of f S]
     .
 
   show ?thesis
-    using rat_additive_finite_sum[
-      where F = ?F and S = S and f = f,
-      OF finite zero add]
+    using mapped
     .
 qed
 
@@ -3837,9 +3866,9 @@ lemma brc_x_from_y_plus_cong:
   assumes agree:
     "\<And>t. t < \<v> \<Longrightarrow> y t = z t"
   shows
-    "brc_x_from_y_plus a b c d w y $$ (i,0)
+    "brc_x_from_y_plus a b c d w y $$\<^sub>v (i)
      =
-     brc_x_from_y_plus a b c d w z $$ (i,0)"
+     brc_x_from_y_plus a b c d w z $$\<^sub>v (i)"
 proof (cases "i < 4*w")
   case True
 
@@ -3910,10 +3939,10 @@ lemma brc_x_from_y_plus_basis:
   assumes i_bound:
     "i < \<v>"
   shows
-    "brc_x_from_y_plus a b c d w y $$ (i,0)
+    "brc_x_from_y_plus a b c d w y $$\<^sub>v (i)
      =
      brc_x_from_y_plus a b c d w
-       (rat_basis_expansion \<v> y) $$ (i,0)"
+       (rat_basis_expansion \<v> y) $$\<^sub>v (i)"
 proof -
   have agree:
     "\<And>t. t < \<v> \<Longrightarrow>
@@ -3948,18 +3977,18 @@ lemma brc_x_from_y_plus_linear_expansion:
   assumes i_bound:
     "i < \<v>"
   shows
-    "brc_x_from_y_plus a b c d w y $$ (i,0)
+    "brc_x_from_y_plus a b c d w y $$\<^sub>v (i)
      =
      (\<Sum>j\<in>{0..<\<v>}.
         y j *
         brc_x_from_y_plus a b c d w
-          (rat_unit_coordinate j) $$ (i,0))"
+          (rat_unit_coordinate j) $$\<^sub>v (i))"
 proof -
   have basis:
-    "brc_x_from_y_plus a b c d w y $$ (i,0)
+    "brc_x_from_y_plus a b c d w y $$\<^sub>v (i)
      =
      brc_x_from_y_plus a b c d w
-       (rat_basis_expansion \<v> y) $$ (i,0)"
+       (rat_basis_expansion \<v> y) $$\<^sub>v (i)"
     using brc_x_from_y_plus_basis[
       where i = i
         and a = a and b = b and c = c and d = d
@@ -3967,34 +3996,52 @@ proof -
       OF v_form i_bound]
     .
 
+  have expansion_as_function_sum:
+    "(\<lambda>t. \<Sum>j\<in>{0..<\<v>}.
+        y j * rat_unit_coordinate j t)
+     =
+     (\<Sum>j\<in>{0..<\<v>}.
+        (\<lambda>t. y j * rat_unit_coordinate j t))"
+    using finite_sum_functions[
+      where S = "{0..<\<v>}"
+        and f = "\<lambda>j t. y j * rat_unit_coordinate j t"]
+    by simp
+
   have summed:
     "brc_x_from_y_plus a b c d w
-       (rat_basis_expansion \<v> y) $$ (i,0)
+       (rat_basis_expansion \<v> y) $$\<^sub>v (i)
      =
      (\<Sum>j\<in>{0..<\<v>}.
         brc_x_from_y_plus a b c d w
-          (\<lambda>t. y j * rat_unit_coordinate j t)
-          $$ (i,0))"
-    unfolding rat_basis_expansion_def
-    using brc_x_from_y_plus_sum[
-      where S = "{0..<\<v>}"
-        and i = i
-        and a = a and b = b and c = c and d = d
-        and w = w
-        and f = "\<lambda>j t. y j * rat_unit_coordinate j t",
-      OF _ i_bound]
-    by simp
+          (\<lambda>t. y j * rat_unit_coordinate j t) $$\<^sub>v (i))"
+  proof -
+    have sum_rule:
+      "brc_x_from_y_plus a b c d w
+         (\<Sum>j\<in>{0..<\<v>}.
+            (\<lambda>t. y j * rat_unit_coordinate j t)) $$\<^sub>v (i)
+       =
+       (\<Sum>j\<in>{0..<\<v>}.
+          brc_x_from_y_plus a b c d w
+            (\<lambda>t. y j * rat_unit_coordinate j t) $$\<^sub>v (i))"
+      by (rule brc_x_from_y_plus_sum[OF i_bound])
+
+    show ?thesis
+      unfolding rat_basis_expansion_def
+      using sum_rule
+      unfolding expansion_as_function_sum
+      .
+  qed
 
   have scaled:
     "(\<Sum>j\<in>{0..<\<v>}.
        brc_x_from_y_plus a b c d w
          (\<lambda>t. y j * rat_unit_coordinate j t)
-         $$ (i,0))
+         $$\<^sub>v (i))
      =
      (\<Sum>j\<in>{0..<\<v>}.
        y j *
        brc_x_from_y_plus a b c d w
-         (rat_unit_coordinate j) $$ (i,0))"
+         (rat_unit_coordinate j) $$\<^sub>v (i))"
   proof -
     show ?thesis
       apply (rule sum.cong)
@@ -4029,11 +4076,11 @@ proof -
     "brc_x_from_y_plus a b c d w"
 
   have entry:
-    "?X y $$ (h,0)
+    "?X y $$\<^sub>v (h)
      =
      (\<Sum>j\<in>{0..<\<v>}.
         y j *
-        ?X (rat_unit_coordinate j) $$ (h,0))"
+        ?X (rat_unit_coordinate j) $$\<^sub>v (h))"
     if h_bound:
       "h \<in> {0..<\<v>}"
     for h
@@ -4052,7 +4099,7 @@ proof -
         of_int (N $$ (h,r)) *
         (\<Sum>j\<in>{0..<\<v>}.
            y j *
-           ?X (rat_unit_coordinate j) $$ (h,0)))"
+           ?X (rat_unit_coordinate j) $$\<^sub>v (h)))"
     unfolding brc_L_def
     using entry
     by (intro sum.cong) auto
@@ -4063,7 +4110,7 @@ proof -
         \<Sum>j\<in>{0..<\<v>}.
           of_int (N $$ (h,r)) *
           (y j *
-           ?X (rat_unit_coordinate j) $$ (h,0)))"
+           ?X (rat_unit_coordinate j) $$\<^sub>v (h)))"
     by (simp only: sum_distrib_left)
 
   also have
@@ -4072,7 +4119,7 @@ proof -
         \<Sum>h\<in>{0..<\<v>}.
           of_int (N $$ (h,r)) *
           (y j *
-           ?X (rat_unit_coordinate j) $$ (h,0)))"
+           ?X (rat_unit_coordinate j) $$\<^sub>v (h)))"
     by (rule sum.swap)
 
   also have
@@ -4081,7 +4128,7 @@ proof -
         y j *
         (\<Sum>h\<in>{0..<\<v>}.
            of_int (N $$ (h,r)) *
-           ?X (rat_unit_coordinate j) $$ (h,0)))"
+           ?X (rat_unit_coordinate j) $$\<^sub>v (h)))"
     apply (rule sum.cong)
      apply (rule refl)
     apply (simp add:
@@ -4131,13 +4178,13 @@ lemma brc_y0_as_full_sum:
   shows
     "brc_y0 x w
      =
-     (\<Sum>h\<in>{0..<\<v>}. x $$ (h,0))"
+     (\<Sum>h\<in>{0..<\<v>}. x $$\<^sub>v (h))"
 proof -
   have split:
-    "(\<Sum>h\<in>{0..<\<v>}. x $$ (h,0))
+    "(\<Sum>h\<in>{0..<\<v>}. x $$\<^sub>v (h))
      =
-     (\<Sum>h\<in>{0..<4*w}. x $$ (h,0))
-     + x $$ (4*w,0)"
+     (\<Sum>h\<in>{0..<4*w}. x $$\<^sub>v (h))
+     + x $$\<^sub>v (4*w)"
     using brc_x_sum_split_last[
       OF v_form, of x]
     .
@@ -4164,11 +4211,11 @@ proof -
     "brc_x_from_y_plus a b c d w"
 
   have entry:
-    "?X y $$ (h,0)
+    "?X y $$\<^sub>v (h)
      =
      (\<Sum>j\<in>{0..<\<v>}.
         y j *
-        ?X (rat_unit_coordinate j) $$ (h,0))"
+        ?X (rat_unit_coordinate j) $$\<^sub>v (h))"
     if h_mem:
       "h \<in> {0..<\<v>}"
     for h
@@ -4186,7 +4233,7 @@ proof -
      (\<Sum>h\<in>{0..<\<v>}.
         \<Sum>j\<in>{0..<\<v>}.
           y j *
-          ?X (rat_unit_coordinate j) $$ (h,0))"
+          ?X (rat_unit_coordinate j) $$\<^sub>v (h))"
     unfolding brc_y0_as_full_sum[OF v_form]
     using entry
     by (intro sum.cong) auto
@@ -4196,7 +4243,7 @@ proof -
      (\<Sum>j\<in>{0..<\<v>}.
         \<Sum>h\<in>{0..<\<v>}.
           y j *
-          ?X (rat_unit_coordinate j) $$ (h,0))"
+          ?X (rat_unit_coordinate j) $$\<^sub>v (h))"
     by (rule sum.swap)
 
   also have
@@ -4204,7 +4251,7 @@ proof -
      (\<Sum>j\<in>{0..<\<v>}.
         y j *
         (\<Sum>h\<in>{0..<\<v>}.
-           ?X (rat_unit_coordinate j) $$ (h,0)))"
+           ?X (rat_unit_coordinate j) $$\<^sub>v (h)))"
   proof (rule sum.cong)
     show "{0..<\<v>} = {0..<\<v>}"
       by simp
@@ -4216,11 +4263,11 @@ proof -
     show
       "(\<Sum>h\<in>{0..<\<v>}.
          y j *
-         ?X (rat_unit_coordinate j) $$ (h,0))
+         ?X (rat_unit_coordinate j) $$\<^sub>v (h))
        =
        y j *
        (\<Sum>h\<in>{0..<\<v>}.
-          ?X (rat_unit_coordinate j) $$ (h,0))"
+          ?X (rat_unit_coordinate j) $$\<^sub>v (h))"
       by (metis sum_distrib_left)
   qed
 
@@ -4326,7 +4373,7 @@ proof -
     "brc_yv ?X w = y (\<v> - 1)"
   proof -
     have entry:
-      "?X $$ (4*w,0) = y (4*w)"
+      "?X $$\<^sub>v (4*w) = y (4*w)"
       using brc_x_from_y_plus_last[
         where w = w and a = a and b = b
           and c = c and d = d and y = y,
@@ -4809,13 +4856,11 @@ definition brc_x_from_y_minus ::
   "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
    nat \<Rightarrow> (nat \<Rightarrow> rat) \<Rightarrow> rat mat" where
   "brc_x_from_y_minus a b c d w y =
-     mat \<v> 1
-       (\<lambda>(i,j).
-          if j \<noteq> 0 then 0
-          else
-            brc_inverse_y_block
-              a b c d y
-              (i div 4) (i mod 4))"
+     column_matrix \<v>
+       (\<lambda>i.
+          brc_inverse_y_block
+            a b c d y
+            (i div 4) (i mod 4))"
 
 definition brc_xv1_from_y_minus ::
   "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
@@ -4890,11 +4935,11 @@ lemma brc_x_from_y_minus_add:
     "i < \<v>"
   shows
     "brc_x_from_y_minus a b c d w
-       (\<lambda>j. y j + z j) $$ (i,0)
+       (\<lambda>j. y j + z j) $$\<^sub>v (i)
      =
-     brc_x_from_y_minus a b c d w y $$ (i,0)
+     brc_x_from_y_minus a b c d w y $$\<^sub>v (i)
      +
-     brc_x_from_y_minus a b c d w z $$ (i,0)"
+     brc_x_from_y_minus a b c d w z $$\<^sub>v (i)"
 proof -
   show ?thesis
     unfolding brc_x_from_y_minus_def
@@ -4911,10 +4956,10 @@ lemma brc_x_from_y_minus_scale:
     "i < \<v>"
   shows
     "brc_x_from_y_minus a b c d w
-       (\<lambda>j. u * y j) $$ (i,0)
+       (\<lambda>j. u * y j) $$\<^sub>v (i)
      =
      u *
-     brc_x_from_y_minus a b c d w y $$ (i,0)"
+     brc_x_from_y_minus a b c d w y $$\<^sub>v (i)"
 proof -
   show ?thesis
     unfolding brc_x_from_y_minus_def
@@ -4957,7 +5002,7 @@ definition brc_extended_x_from_y_minus ::
    (nat \<Rightarrow> rat) \<Rightarrow> nat \<Rightarrow> rat" where
   "brc_extended_x_from_y_minus a b c d w y i =
      (if i < \<v> then
-        brc_x_from_y_minus a b c d w y $$ (i,0)
+        brc_x_from_y_minus a b c d w y $$\<^sub>v (i)
       else
         brc_xv1_from_y_minus a b c d w y)"
 
@@ -5038,52 +5083,41 @@ next
     by simp
 qed
 
-lemma brc_extended_x_from_y_minus_zero:
-  assumes i_bound:
-    "i < \<v> + 1"
-  shows
-    "brc_extended_x_from_y_minus
-       a b c d w rat_vec_zero i
-     =
-     0"
-  using brc_extended_x_from_y_minus_scale[
-    where i = i and a = a and b = b
-      and c = c and d = d and w = w
-      and u = 0 and y = rat_vec_zero,
-    OF i_bound]
-  unfolding rat_vec_zero_def
-  by simp
-
 lemma brc_extended_x_from_y_minus_sum:
-  assumes finite:
-    "finite S"
-  assumes i_bound:
-    "i < \<v> + 1"
+  assumes i_bound: "i < \<v> + 1"
   shows
     "brc_extended_x_from_y_minus a b c d w
-       (\<lambda>t. \<Sum>j\<in>S. f j t) i
+       (\<Sum>j\<in>S. f j) i
      =
      (\<Sum>j\<in>S.
         brc_extended_x_from_y_minus
           a b c d w (f j) i)"
 proof -
   let ?F =
-    "brc_extended_x_from_y_minus a b c d w"
+    "\<lambda>(y :: nat \<Rightarrow> rat).
+       brc_extended_x_from_y_minus a b c d w y i"
 
-  have zero: "?F rat_vec_zero i = 0"
-    using brc_extended_x_from_y_minus_zero[OF i_bound]
-    .
+  have additive_F: "additive ?F"
+    unfolding additive_def
+  proof (intro allI)
+    fix x y :: "nat \<Rightarrow> rat"
 
-  have add:
-    "\<And>x y. ?F (\<lambda>j. x j + y j) i =
-       ?F x i + ?F y i"
-    using brc_extended_x_from_y_minus_add[OF i_bound]
-    .
+    have xy:
+      "x + y = (\<lambda>j. x j + y j)"
+      by (rule ext, simp)
+
+    show
+      "brc_extended_x_from_y_minus a b c d w (x + y) i
+       =
+       brc_extended_x_from_y_minus a b c d w x i
+       +
+       brc_extended_x_from_y_minus a b c d w y i"
+      unfolding xy
+      by (rule brc_extended_x_from_y_minus_add[OF i_bound])
+  qed
 
   show ?thesis
-    using rat_additive_finite_sum[
-      where F = "\<lambda>y. ?F y i" and S = S and f = f,
-      OF finite zero add]
+    using Modules.additive.sum[OF additive_F, of f S]
     .
 qed
 
@@ -5300,6 +5334,16 @@ proof -
         and w = w and y = y,
       OF v_form w_pos i_bound]
     .
+  have expansion_as_function_sum:
+    "(\<lambda>t. \<Sum>j\<in>{0..<\<v> + 1}.
+        y j * rat_unit_coordinate j t)
+     =
+     (\<Sum>j\<in>{0..<\<v> + 1}.
+        (\<lambda>t. y j * rat_unit_coordinate j t))"
+    using finite_sum_functions[
+      where S = "{0..<\<v> + 1}"
+        and f = "\<lambda>j t. y j * rat_unit_coordinate j t"]
+    by simp
 
   have summed:
     "brc_extended_x_from_y_minus a b c d w
@@ -5308,16 +5352,23 @@ proof -
      (\<Sum>j\<in>{0..<\<v> + 1}.
         brc_extended_x_from_y_minus a b c d w
           (\<lambda>t. y j * rat_unit_coordinate j t) i)"
-    unfolding rat_basis_expansion_def
-    using brc_extended_x_from_y_minus_sum[
-      where S = "{0..<\<v> + 1}"
-        and i = i
-        and a = a and b = b and c = c and d = d
-        and w = w
-        and f = "\<lambda>j t.
-          y j * rat_unit_coordinate j t",
-      OF _ i_bound]
-    by simp
+  proof -
+    have sum_rule:
+      "brc_extended_x_from_y_minus a b c d w
+         (\<Sum>j\<in>{0..<\<v> + 1}.
+            (\<lambda>t. y j * rat_unit_coordinate j t)) i
+       =
+       (\<Sum>j\<in>{0..<\<v> + 1}.
+          brc_extended_x_from_y_minus a b c d w
+            (\<lambda>t. y j * rat_unit_coordinate j t) i)"
+      by (rule brc_extended_x_from_y_minus_sum[OF i_bound])
+
+    show ?thesis
+      unfolding rat_basis_expansion_def
+      using sum_rule
+      unfolding expansion_as_function_sum
+      .
+  qed
 
   have scaled:
     "(\<Sum>j\<in>{0..<\<v> + 1}.
@@ -5419,7 +5470,7 @@ proof -
     "brc_extended_x_from_y_minus a b c d w"
 
   have original:
-    "brc_x_from_y_minus a b c d w y $$ (h,0)
+    "brc_x_from_y_minus a b c d w y $$\<^sub>v (h)
      =
      ?E y h"
     if h_bound:
@@ -5544,7 +5595,7 @@ proof -
     "brc_extended_x_from_y_minus a b c d w"
 
   have entry:
-    "brc_x_from_y_minus a b c d w y $$ (h,0)
+    "brc_x_from_y_minus a b c d w y $$\<^sub>v (h)
      =
      (\<Sum>j\<in>{0..<\<v> + 1}.
         y j *
@@ -5559,7 +5610,7 @@ proof -
       by simp
 
     have original:
-      "brc_x_from_y_minus a b c d w y $$ (h,0)
+      "brc_x_from_y_minus a b c d w y $$\<^sub>v (h)
        =
        ?E y h"
       using h_bound
@@ -5697,7 +5748,7 @@ proof -
           "?E (rat_unit_coordinate j) h
            =
            brc_x_from_y_minus a b c d w
-             (rat_unit_coordinate j) $$ (h,0)"
+             (rat_unit_coordinate j) $$\<^sub>v (h)"
           using h_bound
           unfolding brc_extended_x_from_y_minus_def
           by simp
@@ -5708,7 +5759,7 @@ proof -
            =
            of_int (N $$ (h,r)) *
              brc_x_from_y_minus a b c d w
-               (rat_unit_coordinate j) $$ (h,0)"
+               (rat_unit_coordinate j) $$\<^sub>v (h)"
           using coordinate
           by simp
       qed
@@ -5752,13 +5803,11 @@ definition brc_extended_matrix_from_y_minus ::
   "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
    (nat \<Rightarrow> rat) \<Rightarrow> rat mat" where
   "brc_extended_matrix_from_y_minus a b c d w y =
-     mat (\<v> + 1) 1
-       (\<lambda>(i,j).
-          if j \<noteq> 0 then 0
-          else
-            brc_inverse_y_block
-              a b c d y
-              (i div 4) (i mod 4))"
+     column_matrix (\<v> + 1)
+       (\<lambda>i.
+          brc_inverse_y_block
+            a b c d y
+            (i div 4) (i mod 4))"
 
 lemma brc_extended_matrix_minus_block:
   assumes v_form:
@@ -5771,7 +5820,7 @@ lemma brc_extended_matrix_minus_block:
     "j < 4"
   shows
     "brc_extended_matrix_from_y_minus
-       a b c d w y $$ (4*h+j,0)
+       a b c d w y $$\<^sub>v (4*h+j)
      =
      brc_inverse_y_block a b c d y h j"
 proof -
@@ -5820,7 +5869,7 @@ proof -
       a b c d w y"
 
   have x0:
-    "?X $$ (4*h,0)
+    "?X $$\<^sub>v (4*h)
      =
      brc_inverse_y_block a b c d y h 0"
     using brc_extended_matrix_minus_block[
@@ -5831,7 +5880,7 @@ proof -
     by simp
 
   have x1:
-    "?X $$ (4*h+1,0)
+    "?X $$\<^sub>v (4*h+1)
      =
      brc_inverse_y_block a b c d y h 1"
     using brc_extended_matrix_minus_block[
@@ -5842,7 +5891,7 @@ proof -
     by simp
 
   have x2:
-    "?X $$ (4*h+2,0)
+    "?X $$\<^sub>v (4*h+2)
      =
      brc_inverse_y_block a b c d y h 2"
     using brc_extended_matrix_minus_block[
@@ -5853,7 +5902,7 @@ proof -
     by simp
 
   have x3:
-    "?X $$ (4*h+3,0)
+    "?X $$\<^sub>v (4*h+3)
      =
      brc_inverse_y_block a b c d y h 3"
     using brc_extended_matrix_minus_block[
@@ -5866,10 +5915,10 @@ proof -
   have forward:
     "y_of
       ((a,b,c,d),
-       (?X $$ (4*h,0),
-        ?X $$ (4*h+1,0),
-        ?X $$ (4*h+2,0),
-        ?X $$ (4*h+3,0)))
+       (?X $$\<^sub>v (4*h),
+        ?X $$\<^sub>v (4*h+1),
+        ?X $$\<^sub>v (4*h+2),
+        ?X $$\<^sub>v (4*h+3)))
      =
      (y (4*h), y (4*h+1),
       y (4*h+2), y (4*h+3))"
@@ -5895,18 +5944,18 @@ lemma brc_extended_matrix_minus_eq_extend:
     "i < \<v> + 1"
   shows
     "brc_extended_matrix_from_y_minus
-       a b c d w y $$ (i,0)
+       a b c d w y $$\<^sub>v (i)
      =
      brc_extend_x
        (brc_x_from_y_minus a b c d w y)
        (brc_xv1_from_y_minus a b c d w y)
-       $$ (i,0)"
+       $$\<^sub>v (i)"
 proof (cases "i < \<v>")
   case True
 
   have left:
     "brc_extended_matrix_from_y_minus
-       a b c d w y $$ (i,0)
+       a b c d w y $$\<^sub>v (i)
      =
      brc_inverse_y_block
        a b c d y (i div 4) (i mod 4)"
@@ -5915,7 +5964,7 @@ proof (cases "i < \<v>")
     by simp
 
   have right:
-    "brc_x_from_y_minus a b c d w y $$ (i,0)
+    "brc_x_from_y_minus a b c d w y $$\<^sub>v (i)
      =
      brc_inverse_y_block
        a b c d y (i div 4) (i mod 4)"
@@ -5937,7 +5986,7 @@ next
 
   have left:
     "brc_extended_matrix_from_y_minus
-       a b c d w y $$ (\<v>,0)
+       a b c d w y $$\<^sub>v (\<v>)
      =
      brc_xv1_from_y_minus a b c d w y"
     unfolding brc_extended_matrix_from_y_minus_def
@@ -6061,10 +6110,10 @@ proof -
     by simp
 
   have block_entries:
-    "brc_extend_x ?x ?xv1 $$ (i,0)
+    "brc_extend_x ?x ?xv1 $$\<^sub>v (i)
      =
      brc_extended_matrix_from_y_minus
-       a b c d w y $$ (i,0)"
+       a b c d w y $$\<^sub>v (i)"
     if i_bound:
       "i < \<v> + 1"
     for i
@@ -6099,34 +6148,34 @@ proof -
         by simp
 
       have e0:
-        "brc_extend_x ?x ?xv1 $$ (4*h,0)
+        "brc_extend_x ?x ?xv1 $$\<^sub>v (4*h)
          =
          brc_extended_matrix_from_y_minus
-           a b c d w y $$ (4*h,0)"
+           a b c d w y $$\<^sub>v (4*h)"
         using block_entries h_lt v_form w_pos
         by simp
 
       have e1:
-        "brc_extend_x ?x ?xv1 $$ (4*h+1,0)
+        "brc_extend_x ?x ?xv1 $$\<^sub>v (4*h+1)
          =
          brc_extended_matrix_from_y_minus
-           a b c d w y $$ (4*h+1,0)"
+           a b c d w y $$\<^sub>v (4*h+1)"
         using block_entries h_lt v_form w_pos
         by simp
 
       have e2:
-        "brc_extend_x ?x ?xv1 $$ (4*h+2,0)
+        "brc_extend_x ?x ?xv1 $$\<^sub>v (4*h+2)
          =
          brc_extended_matrix_from_y_minus
-           a b c d w y $$ (4*h+2,0)"
+           a b c d w y $$\<^sub>v (4*h+2)"
         using block_entries h_lt v_form w_pos
         by simp
 
       have e3:
-        "brc_extend_x ?x ?xv1 $$ (4*h+3,0)
+        "brc_extend_x ?x ?xv1 $$\<^sub>v (4*h+3)
          =
          brc_extended_matrix_from_y_minus
-           a b c d w y $$ (4*h+3,0)"
+           a b c d w y $$\<^sub>v (4*h+3)"
         using block_entries h_lt v_form w_pos
         by simp
 
