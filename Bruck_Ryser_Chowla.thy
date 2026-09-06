@@ -6,7 +6,7 @@ theory Bruck_Ryser_Chowla imports
   Fishers_Inequality.Fishers_Inequality SumSquares.FourSquares Pell.Pell 
 begin 
 
-section \<open>The Bruck-Ryser-Chowla theorem\<close>
+section \<open>Preliminaries\<close>
 
 text \<open>
 The Bruck-Ryser-Chowla theorem gives necessary arithmetic conditions
@@ -134,7 +134,7 @@ qed
 context ordered_sym_bibd
 begin
 
-subsection \<open>Even order: the determinant argument\<close>
+section \<open>The even-order case\<close>
 
 text \<open>
 For a symmetric design, the replication number equals the block size.
@@ -395,7 +395,7 @@ qed
 
 end
 
-subsection \<open>Odd order: the fundamental quadratic identity\<close>
+section \<open>The fundamental quadratic identity\<close>
 
 text \<open>
 The odd-order argument follows the classical ``rational equivalence''
@@ -692,7 +692,7 @@ qed
 
 end
 
-subsection \<open>The four-square change of variables\<close>
+section \<open>The four-square change of variables\<close>
 
 text \<open>
 The following maps are the rational change of coordinates associated with
@@ -1514,7 +1514,7 @@ qed
 
 end
 
-subsection \<open>Rational elimination of linear squares\<close>
+section \<open>Rational elimination of linear squares\<close>
 
 text \<open>
 This section isolates the algebraic elimination used in both odd-order
@@ -3314,7 +3314,7 @@ proof -
     by blast
 qed
 
-subsection \<open>The case v = 4w + 1\<close>
+section \<open>The case v = 4w + 1\<close>
 
 text \<open>
 For order @{term "4 * w + 1 :: nat"}, the inverse four-square
@@ -4843,7 +4843,7 @@ qed
 context ordered_sym_bibd
 begin
 
-subsection \<open>The case v = 4w - 1\<close>
+section \<open>The case v = 4w - 1\<close>
 
 text \<open>
 For order @{term "4 * w - 1 :: nat"}, one auxiliary coordinate completes
@@ -6462,18 +6462,16 @@ proof -
     by blast
 qed
 
-subsection \<open>Clearing denominators and assembling the theorem\<close>
-
-text \<open>
-The elimination argument naturally yields rational witnesses.  A common
-denominator converts them to integer witnesses; homogeneity of the
-quadratic equation preserves both the equality and nontriviality.  The
-final theorem then combines the two odd residue classes modulo four.
-\<close>
-
 end
 
+section \<open>Clearing denominators and assembling the theorem\<close>
+
 text \<open>
+The elimination argument naturally yields rational witnesses. A common
+denominator converts them to integer witnesses; homogeneity of the
+quadratic equation preserves both the equality and nontriviality. The
+final theorem then combines the two odd residue classes modulo four.
+
 The next two lemmas are generic facts about rational quadratic equations.
 They clear denominators without using any incidence-matrix or design
 assumption, so they are kept outside the design locale.
