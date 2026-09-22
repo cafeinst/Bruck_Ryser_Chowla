@@ -131,6 +131,30 @@ next
   qed
 qed
 
+text \<open>
+The reconstruction maps are linear in their rational coordinates.
+The following helper applies the library's additive finite-sum theorem
+to maps whose additivity is stated pointwise.
+\<close>
+
+lemma rat_function_sum:
+  fixes F :: "(nat \<Rightarrow> rat) \<Rightarrow> rat"
+  assumes add: "\<And>x y. F (\<lambda>j. x j + y j) = F x + F y"
+  shows "F (\<Sum>j\<in>S. f j) = (\<Sum>j\<in>S. F (f j))"
+proof -
+  have additive_F: "additive F"
+    unfolding additive_def
+  proof (intro allI)
+    fix x y :: "nat \<Rightarrow> rat"
+    have "x + y = (\<lambda>j. x j + y j)"
+      by (rule ext, simp)
+    then show "F (x + y) = F x + F y"
+      using add[of x y] by simp
+  qed
+  show ?thesis
+    using Modules.additive.sum[OF additive_F, of f S] .
+qed
+
 context ordered_sym_bibd
 begin
 
@@ -3058,6 +3082,182 @@ proof -
     by simp
 qed
 
+definition rat_unit_coordinate ::
+  "nat \<Rightarrow> nat \<Rightarrow> rat" where
+  "rat_unit_coordinate k =
+     (\<lambda>j. if j = k then 1 else 0)"
+
+text \<open>
+The following terminal elimination theorems depend only on the rational
+forms introduced above. They make no use of a block design and therefore
+belong outside @{locale ordered_sym_bibd}.
+\<close>
+
+lemma rat_weighted_elimination_terminal_general:
+  fixes C :: "nat \<Rightarrow> nat \<Rightarrow> rat"
+  fixes d W :: "nat \<Rightarrow> rat"
+  fixes alpha beta delta :: rat
+  assumes n_pos:
+    "0 < n"
+  assumes elimination_weights:
+    "\<And>q. q < n - 1 \<Longrightarrow> W q = 1"
+  assumes first_terminal_weight:
+    "W (n - 1) = alpha"
+  assumes second_terminal_weight:
+    "W n = beta"
+  assumes unit_diagonal:
+    "\<And>q. q < n - 1 \<Longrightarrow> d q = 1"
+  assumes last_diagonal:
+    "d (n - 1) = delta"
+  assumes initial:
+    "\<And>x.
+       rat_weighted_linear_squares_from
+         n 0 (n + 1) W C x
+       =
+       rat_diagonal_form n d x"
+  shows
+    "\<And>y.
+       alpha *
+       (rat_linear_form n
+          (rat_elimination_coeffs
+            n (n - 1) C (n - 1))
+          y)^2
+       +
+       beta *
+       (rat_linear_form n
+          (rat_elimination_coeffs
+            n (n - 1) C n)
+          y)^2
+       =
+       delta * (y (n - 1))^2"
+proof -
+  fix y
+
+  have iterated:
+    "rat_weighted_linear_squares_from
+       n (n - 1) (n + 1) W
+       (rat_elimination_coeffs n (n - 1) C) y
+     =
+     rat_diagonal_form n d
+       (rat_zero_prefix (n - 1) y)"
+    using rat_weighted_elimination_iterate[
+      where n = n
+        and Q = "n - 1"
+        and m = "n + 1"
+        and W = W
+        and C = C
+        and d = d,
+      OF _ _ elimination_weights
+         unit_diagonal initial]
+    by simp
+
+  have left:
+    "rat_weighted_linear_squares_from
+       n (n - 1) (n + 1) W
+       (rat_elimination_coeffs n (n - 1) C) y
+     =
+     alpha *
+       (rat_linear_form n
+          (rat_elimination_coeffs
+            n (n - 1) C (n - 1))
+          y)^2
+     +
+     beta *
+       (rat_linear_form n
+          (rat_elimination_coeffs
+            n (n - 1) C n)
+          y)^2"
+    using rat_weighted_terminal_two[
+      where n = n
+        and W = W
+        and C = "rat_elimination_coeffs n (n - 1) C"
+        and y = y,
+      OF n_pos]
+      first_terminal_weight second_terminal_weight
+    by simp
+
+  have right:
+    "rat_diagonal_form n d
+       (rat_zero_prefix (n - 1) y)
+     =
+     delta * (y (n - 1))^2"
+    using rat_diagonal_form_zero_prefix_last[
+      where n = n and d = d and y = y,
+      OF n_pos]
+      last_diagonal
+    by simp
+
+  show
+    "alpha *
+       (rat_linear_form n
+          (rat_elimination_coeffs
+            n (n - 1) C (n - 1))
+          y)^2
+     +
+     beta *
+       (rat_linear_form n
+          (rat_elimination_coeffs
+            n (n - 1) C n)
+          y)^2
+     =
+     delta * (y (n - 1))^2"
+    using iterated left right
+    by simp
+qed
+
+text \<open>
+The elimination leaves one diagonal coordinate free. We set this
+coordinate to one and evaluate the two surviving linear forms.
+The terminal identity then supplies a rational solution of the
+required quadratic equation. This solution is nontrivial because
+one of its coordinates is one. Multiplication by a common nonzero
+denominator gives a nontrivial integer solution.
+\<close>
+
+lemma rat_weighted_elimination_terminal_solution_general:
+  fixes C :: "nat \<Rightarrow> nat \<Rightarrow> rat"
+  fixes d W :: "nat \<Rightarrow> rat"
+  fixes alpha beta :: rat
+  assumes n_pos:
+    "0 < n"
+  assumes elimination_weights:
+    "\<And>q. q < n - 1 \<Longrightarrow> W q = 1"
+  assumes first_terminal_weight:
+    "W (n - 1) = alpha"
+  assumes second_terminal_weight:
+    "W n = beta"
+  assumes unit_diagonal:
+    "\<And>q. q < n - 1 \<Longrightarrow> d q = 1"
+  assumes last_diagonal:
+    "d (n - 1) = 1"
+  assumes initial:
+    "\<And>x.
+       rat_weighted_linear_squares_from
+         n 0 (n + 1) W C x
+       =
+       rat_diagonal_form n d x"
+  shows
+    "\<exists>x y z :: rat.
+       (x \<noteq> 0 \<or> y \<noteq> 0 \<or> z \<noteq> 0) \<and>
+       x^2 = alpha * y^2 + beta * z^2"
+proof -
+  let ?u = "rat_unit_coordinate (n - 1)"
+  let ?y = "rat_linear_form n (rat_elimination_coeffs n (n - 1) C (n - 1)) ?u"
+  let ?z = "rat_linear_form n (rat_elimination_coeffs n (n - 1) C n) ?u"
+  have equation: "(1::rat)^2 = alpha * ?y^2 + beta * ?z^2"
+    using rat_weighted_elimination_terminal_general[
+      where n = n and C = C and d = d and W = W
+        and alpha = alpha and beta = beta and delta = 1,
+      OF n_pos elimination_weights first_terminal_weight second_terminal_weight
+         unit_diagonal last_diagonal initial, of ?u]
+    by (simp add: rat_unit_coordinate_def)
+  show ?thesis
+    apply (rule exI[of _ 1])
+    apply (rule exI[of _ ?y])
+    apply (rule exI[of _ ?z])
+    using equation by simp
+qed
+
 lemma rat_weighted_elimination_terminal:
   fixes C :: "nat \<Rightarrow> nat \<Rightarrow> rat"
   fixes d W :: "nat \<Rightarrow> rat"
@@ -3093,121 +3293,21 @@ lemma rat_weighted_elimination_terminal:
        =
        delta * (y (n - 1))^2"
 proof -
-  fix y
-
-  have Q_le_m:
-    "n - 1 \<le> n + 1"
-    by simp
-
-  have Q_le_n:
-    "n - 1 \<le> n"
-    by simp
-
-  have weights:
-    "\<And>q. q < n - 1 \<Longrightarrow> W q = 1"
-    using form_weights
-    by simp
-
-  have iterated:
-    "rat_weighted_linear_squares_from
-       n (n - 1) (n + 1) W
-       (rat_elimination_coeffs n (n - 1) C) y
-     =
-     rat_diagonal_form n d
-       (rat_zero_prefix (n - 1) y)"
-    using rat_weighted_elimination_iterate[
-      where n = n
-        and Q = "n - 1"
-        and m = "n + 1"
-        and W = W
-        and C = C
-        and d = d,
-      OF Q_le_m Q_le_n weights
-         unit_diagonal initial]
-    .
-
-  have left_expanded:
-    "rat_weighted_linear_squares_from
-       n (n - 1) (n + 1) W
-       (rat_elimination_coeffs n (n - 1) C) y
-     =
-     (rat_linear_form n
-        (rat_elimination_coeffs
-          n (n - 1) C (n - 1))
-        y)^2
-     -
-     lam *
-     (rat_linear_form n
-        (rat_elimination_coeffs
-          n (n - 1) C n)
-        y)^2"
-  proof -
-    have terminal:
-      "rat_weighted_linear_squares_from
-         n (n - 1) (n + 1) W
-         (rat_elimination_coeffs n (n - 1) C) y
-       =
-       W (n - 1) *
-         (rat_linear_form n
-           (rat_elimination_coeffs
-             n (n - 1) C (n - 1))
-           y)^2
-       +
-       W n *
-         (rat_linear_form n
-           (rat_elimination_coeffs
-             n (n - 1) C n)
-           y)^2"
-      using rat_weighted_terminal_two[
-        where n = n
-          and W = W
-          and C = "rat_elimination_coeffs n (n - 1) C"
-          and y = y,
-        OF n_pos]
-      .
-
-    have last_form_weight:
-      "W (n - 1) = 1"
-      using form_weights n_pos
-      by simp
-
-    show ?thesis
-      using terminal last_form_weight carried_weight
-      by simp
-  qed
-
-  have right_expanded:
-    "rat_diagonal_form n d
-       (rat_zero_prefix (n - 1) y)
-     =
-     delta * (y (n - 1))^2"
-    using rat_diagonal_form_zero_prefix_last[
-      where n = n and d = d and y = y,
-      OF n_pos]
-      last_diagonal
-    by simp
-
-  show
-    "(rat_linear_form n
-       (rat_elimination_coeffs
-         n (n - 1) C (n - 1))
-       y)^2
-     -
-     lam *
-       (rat_linear_form n
-         (rat_elimination_coeffs
-           n (n - 1) C n)
-         y)^2
-     =
-     delta * (y (n - 1))^2"
-    using iterated left_expanded right_expanded
+  have weights: "\<And>q. q < n - 1 \<Longrightarrow> W q = 1"
+    using form_weights by simp
+  have last_weight: "W (n - 1) = 1"
+    using form_weights n_pos by simp
+  show "\<And>y.
+    (rat_linear_form n (rat_elimination_coeffs n (n - 1) C (n - 1)) y)^2
+      - lam * (rat_linear_form n (rat_elimination_coeffs n (n - 1) C n) y)^2
+      = delta * (y (n - 1))^2"
+    using rat_weighted_elimination_terminal_general[
+      where n = n and C = C and d = d and W = W
+        and alpha = 1 and beta = "-lam" and delta = delta,
+      OF n_pos weights last_weight carried_weight
+         unit_diagonal last_diagonal initial]
     by simp
 qed
-
-definition rat_unit_coordinate ::
-  "nat \<Rightarrow> nat \<Rightarrow> rat" where
-  "rat_unit_coordinate k =
-     (\<lambda>j. if j = k then 1 else 0)"
 
 text \<open>
 After all nonterminal coordinates have been eliminated, the surviving
@@ -3241,77 +3341,24 @@ lemma rat_weighted_elimination_nontrivial_solution:
        (x \<noteq> 0 \<or> y \<noteq> 0 \<or> z \<noteq> 0) \<and>
        x^2 = delta * y^2 + lam * z^2"
 proof -
-  let ?u =
-    "rat_unit_coordinate (n - 1)"
-
-  let ?x =
-    "rat_linear_form n
-       (rat_elimination_coeffs
-         n (n - 1) C (n - 1))
-       ?u"
-
-  let ?z =
-    "rat_linear_form n
-       (rat_elimination_coeffs
-         n (n - 1) C n)
-       ?u"
-
-  have terminal:
-    "?x^2 - lam * ?z^2
-     =
-     delta * (?u (n - 1))^2"
+  let ?u = "rat_unit_coordinate (n - 1)"
+  let ?x = "rat_linear_form n (rat_elimination_coeffs n (n - 1) C (n - 1)) ?u"
+  let ?z = "rat_linear_form n (rat_elimination_coeffs n (n - 1) C n) ?u"
+  have terminal: "?x^2 - lam * ?z^2 = delta"
     using rat_weighted_elimination_terminal[
-      where n = n
-        and C = C
-        and d = d
-        and W = W
-        and lam = lam
-        and delta = delta,
-      OF n_pos form_weights carried_weight
-         unit_diagonal last_diagonal initial,
+      where n = n and C = C and d = d and W = W
+        and lam = lam and delta = delta,
+      OF n_pos form_weights carried_weight unit_diagonal last_diagonal initial,
       of ?u]
-    .
-
-  have unit_value:
-    "?u (n - 1) = 1"
-    unfolding rat_unit_coordinate_def
-    by simp
-
-  have rearranged:
-    "?x^2
-     =
-     delta * (?u (n - 1))^2 +
-     lam * ?z^2"
-  proof -
-    have
-      "?x^2
-       =
-       (?x^2 - lam * ?z^2) +
-       lam * ?z^2"
-      by simp
-
-    also have
-      "... =
-       delta * (?u (n - 1))^2 +
-       lam * ?z^2"
-      using terminal
-      by simp
-
-    finally show ?thesis .
-  qed
-
-  have equation:
-    "?x^2 = delta * (1::rat)^2 + lam * ?z^2"
-    using rearranged unit_value
-    by simp
-
-  have nonzero:
-    "?x \<noteq> 0 \<or> (1::rat) \<noteq> 0 \<or> ?z \<noteq> 0"
-    by simp
+    by (simp add: rat_unit_coordinate_def)
+  have equation: "?x^2 = delta * (1::rat)^2 + lam * ?z^2"
+    using terminal by (simp add: diff_eq_eq)
 
   show ?thesis
-    using equation nonzero
-    by blast
+    apply (rule exI[of _ ?x])
+    apply (rule exI[of _ "1::rat"])
+    apply (rule exI[of _ ?z])
+    using equation by simp
 qed
 
 section \<open>The case v = 4w + 1\<close>
@@ -3784,38 +3831,7 @@ lemma brc_x_from_y_plus_sum:
      =
      (\<Sum>j\<in>S.
         brc_x_from_y_plus a b c d w (f j) $$\<^sub>v (i))"
-proof -
-  let ?F =
-    "\<lambda>(y :: nat \<Rightarrow> rat).
-       brc_x_from_y_plus a b c d w y $$\<^sub>v (i)"
-
-  have additive_F: "additive ?F"
-    unfolding additive_def
-  proof (intro allI)
-    fix x y :: "nat \<Rightarrow> rat"
-
-    have xy:
-      "x + y = (\<lambda>j. x j + y j)"
-      by (rule ext, simp)
-
-    show
-      "brc_x_from_y_plus a b c d w (x + y) $$\<^sub>v (i) =
-       brc_x_from_y_plus a b c d w x $$\<^sub>v (i) +
-       brc_x_from_y_plus a b c d w y $$\<^sub>v (i)"
-      unfolding xy
-      by (rule brc_x_from_y_plus_add[OF i_bound])
-  qed
-
-  have mapped:
-    "?F (\<Sum>j\<in>S. f j) =
-     (\<Sum>j\<in>S. ?F (f j))"
-    using Modules.additive.sum[OF additive_F, of f S]
-    .
-
-  show ?thesis
-    using mapped
-    .
-qed
+by (rule rat_function_sum) (rule brc_x_from_y_plus_add[OF i_bound])
 
 end
 
@@ -3853,6 +3869,40 @@ proof -
   finally show ?thesis
     unfolding rat_basis_expansion_def rat_unit_coordinate_def
     .
+qed
+
+text \<open>
+A linear map that depends only on the first n coordinates is determined
+by its values on the n unit vectors. Both odd-order cases use this
+same expansion; only their reconstruction maps and dimensions differ.
+\<close>
+
+lemma rat_function_linear_expansion:
+  fixes F :: "(nat \<Rightarrow> rat) \<Rightarrow> rat"
+  assumes add: "\<And>x z. F (\<lambda>j. x j + z j) = F x + F z"
+    and scale: "\<And>r x. F (\<lambda>j. r * x j) = r * F x"
+    and basis: "F y = F (rat_basis_expansion n y)"
+  shows "F y = (\<Sum>j\<in>{0..<n}. y j * F (rat_unit_coordinate j))"
+proof -
+  have expansion:
+    "rat_basis_expansion n y =
+      (\<Sum>j\<in>{0..<n}. (\<lambda>t. y j * rat_unit_coordinate j t))"
+    unfolding rat_basis_expansion_def
+    using finite_sum_functions[
+      where S = "{0..<n}" and f = "\<lambda>j t. y j * rat_unit_coordinate j t"]
+    by simp
+  have "F y = F (rat_basis_expansion n y)"
+    by (rule basis)
+  also have "... = (\<Sum>j\<in>{0..<n}. F (\<lambda>t. y j * rat_unit_coordinate j t))"
+    unfolding expansion
+    by (rule rat_function_sum[
+          where F = F
+            and S = "{0..<n}"
+            and f = "\<lambda>j. \<lambda>t. y j * rat_unit_coordinate j t",
+          OF add])
+  also have "... = (\<Sum>j\<in>{0..<n}. y j * F (rat_unit_coordinate j))"
+    by (simp only: scale)
+  finally show ?thesis .
 qed
 
 context ordered_sym_bibd
@@ -3983,81 +4033,10 @@ lemma brc_x_from_y_plus_linear_expansion:
         y j *
         brc_x_from_y_plus a b c d w
           (rat_unit_coordinate j) $$\<^sub>v (i))"
-proof -
-  have basis:
-    "brc_x_from_y_plus a b c d w y $$\<^sub>v (i)
-     =
-     brc_x_from_y_plus a b c d w
-       (rat_basis_expansion \<v> y) $$\<^sub>v (i)"
-    using brc_x_from_y_plus_basis[
-      where i = i
-        and a = a and b = b and c = c and d = d
-        and w = w and y = y,
-      OF v_form i_bound]
-    .
-
-  have expansion_as_function_sum:
-    "(\<lambda>t. \<Sum>j\<in>{0..<\<v>}.
-        y j * rat_unit_coordinate j t)
-     =
-     (\<Sum>j\<in>{0..<\<v>}.
-        (\<lambda>t. y j * rat_unit_coordinate j t))"
-    using finite_sum_functions[
-      where S = "{0..<\<v>}"
-        and f = "\<lambda>j t. y j * rat_unit_coordinate j t"]
-    by simp
-
-  have summed:
-    "brc_x_from_y_plus a b c d w
-       (rat_basis_expansion \<v> y) $$\<^sub>v (i)
-     =
-     (\<Sum>j\<in>{0..<\<v>}.
-        brc_x_from_y_plus a b c d w
-          (\<lambda>t. y j * rat_unit_coordinate j t) $$\<^sub>v (i))"
-  proof -
-    have sum_rule:
-      "brc_x_from_y_plus a b c d w
-         (\<Sum>j\<in>{0..<\<v>}.
-            (\<lambda>t. y j * rat_unit_coordinate j t)) $$\<^sub>v (i)
-       =
-       (\<Sum>j\<in>{0..<\<v>}.
-          brc_x_from_y_plus a b c d w
-            (\<lambda>t. y j * rat_unit_coordinate j t) $$\<^sub>v (i))"
-      by (rule brc_x_from_y_plus_sum[OF i_bound])
-
-    show ?thesis
-      unfolding rat_basis_expansion_def
-      using sum_rule
-      unfolding expansion_as_function_sum
-      .
-  qed
-
-  have scaled:
-    "(\<Sum>j\<in>{0..<\<v>}.
-       brc_x_from_y_plus a b c d w
-         (\<lambda>t. y j * rat_unit_coordinate j t)
-         $$\<^sub>v (i))
-     =
-     (\<Sum>j\<in>{0..<\<v>}.
-       y j *
-       brc_x_from_y_plus a b c d w
-         (rat_unit_coordinate j) $$\<^sub>v (i))"
-  proof -
-    show ?thesis
-      apply (rule sum.cong)
-       apply (rule refl)
-      using brc_x_from_y_plus_scale[
-        where i = i
-          and a = a and b = b and c = c and d = d
-          and w = w]
-        i_bound
-      by simp
-  qed
-
-  show ?thesis
-    using basis summed scaled
-    by simp
-qed
+apply (rule rat_function_linear_expansion)
+    apply (rule brc_x_from_y_plus_add[OF i_bound])
+   apply (rule brc_x_from_y_plus_scale[OF i_bound])
+  by (rule brc_x_from_y_plus_basis[OF v_form i_bound])
 
 lemma brc_plus_coeff_L_representation:
   assumes v_form:
@@ -4575,271 +4554,6 @@ qed
 
 end
 
-text \<open>
-The following terminal elimination theorems depend only on the rational
-forms introduced above. They make no use of a block design and therefore
-belong outside @{locale ordered_sym_bibd}.
-\<close>
-
-lemma rat_weighted_elimination_terminal_general:
-  fixes C :: "nat \<Rightarrow> nat \<Rightarrow> rat"
-  fixes d W :: "nat \<Rightarrow> rat"
-  fixes alpha beta delta :: rat
-  assumes n_pos:
-    "0 < n"
-  assumes elimination_weights:
-    "\<And>q. q < n - 1 \<Longrightarrow> W q = 1"
-  assumes first_terminal_weight:
-    "W (n - 1) = alpha"
-  assumes second_terminal_weight:
-    "W n = beta"
-  assumes unit_diagonal:
-    "\<And>q. q < n - 1 \<Longrightarrow> d q = 1"
-  assumes last_diagonal:
-    "d (n - 1) = delta"
-  assumes initial:
-    "\<And>x.
-       rat_weighted_linear_squares_from
-         n 0 (n + 1) W C x
-       =
-       rat_diagonal_form n d x"
-  shows
-    "\<And>y.
-       alpha *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C (n - 1))
-          y)^2
-       +
-       beta *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C n)
-          y)^2
-       =
-       delta * (y (n - 1))^2"
-proof -
-  fix y
-
-  have iterated:
-    "rat_weighted_linear_squares_from
-       n (n - 1) (n + 1) W
-       (rat_elimination_coeffs n (n - 1) C) y
-     =
-     rat_diagonal_form n d
-       (rat_zero_prefix (n - 1) y)"
-    using rat_weighted_elimination_iterate[
-      where n = n
-        and Q = "n - 1"
-        and m = "n + 1"
-        and W = W
-        and C = C
-        and d = d,
-      OF _ _ elimination_weights
-         unit_diagonal initial]
-    by simp
-
-  have left:
-    "rat_weighted_linear_squares_from
-       n (n - 1) (n + 1) W
-       (rat_elimination_coeffs n (n - 1) C) y
-     =
-     alpha *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C (n - 1))
-          y)^2
-     +
-     beta *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C n)
-          y)^2"
-    using rat_weighted_terminal_two[
-      where n = n
-        and W = W
-        and C = "rat_elimination_coeffs n (n - 1) C"
-        and y = y,
-      OF n_pos]
-      first_terminal_weight second_terminal_weight
-    by simp
-
-  have right:
-    "rat_diagonal_form n d
-       (rat_zero_prefix (n - 1) y)
-     =
-     delta * (y (n - 1))^2"
-    using rat_diagonal_form_zero_prefix_last[
-      where n = n and d = d and y = y,
-      OF n_pos]
-      last_diagonal
-    by simp
-
-  show
-    "alpha *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C (n - 1))
-          y)^2
-     +
-     beta *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C n)
-          y)^2
-     =
-     delta * (y (n - 1))^2"
-    using iterated left right
-    by simp
-qed
-
-lemma rat_weighted_elimination_terminal_solution_general:
-  fixes C :: "nat \<Rightarrow> nat \<Rightarrow> rat"
-  fixes d W :: "nat \<Rightarrow> rat"
-  fixes alpha beta :: rat
-  assumes n_pos:
-    "0 < n"
-  assumes elimination_weights:
-    "\<And>q. q < n - 1 \<Longrightarrow> W q = 1"
-  assumes first_terminal_weight:
-    "W (n - 1) = alpha"
-  assumes second_terminal_weight:
-    "W n = beta"
-  assumes unit_diagonal:
-    "\<And>q. q < n - 1 \<Longrightarrow> d q = 1"
-  assumes last_diagonal:
-    "d (n - 1) = 1"
-  assumes initial:
-    "\<And>x.
-       rat_weighted_linear_squares_from
-         n 0 (n + 1) W C x
-       =
-       rat_diagonal_form n d x"
-  shows
-    "\<exists>x y z :: rat.
-       (x \<noteq> 0 \<or> y \<noteq> 0 \<or> z \<noteq> 0) \<and>
-       x^2 = alpha * y^2 + beta * z^2"
-proof -
-  let ?u =
-    "rat_unit_coordinate (n - 1)"
-
-  let ?y =
-    "rat_linear_form n
-       (rat_elimination_coeffs
-         n (n - 1) C (n - 1))
-       ?u"
-
-  let ?z =
-    "rat_linear_form n
-       (rat_elimination_coeffs
-         n (n - 1) C n)
-       ?u"
-
-  have general_terminal:
-    "\<And>v.
-       alpha *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C (n - 1))
-          v)^2
-       +
-       beta *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C n)
-          v)^2
-       =
-       (v (n - 1))^2"
-  proof -
-    fix v
-
-    have result:
-      "alpha *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C (n - 1))
-          v)^2
-       +
-       beta *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C n)
-          v)^2
-       =
-       1 * (v (n - 1))^2"
-    proof (rule rat_weighted_elimination_terminal_general[
-        where n = n
-          and C = C
-          and d = d
-          and W = W
-          and alpha = alpha
-          and beta = beta
-          and delta = 1])
-      show "0 < n"
-        using n_pos .
-      show "\<And>q. q < n - 1 \<Longrightarrow> W q = 1"
-        using elimination_weights .
-      show "W (n - 1) = alpha"
-        using first_terminal_weight .
-      show "W n = beta"
-        using second_terminal_weight .
-      show "\<And>q. q < n - 1 \<Longrightarrow> d q = 1"
-        using unit_diagonal .
-      show "d (n - 1) = 1"
-        using last_diagonal .
-      show
-        "\<And>x.
-         rat_weighted_linear_squares_from
-           n 0 (n + 1) W C x
-         =
-         rat_diagonal_form n d x"
-        using initial .
-    qed
-
-    show
-      "alpha *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C (n - 1))
-          v)^2
-       +
-       beta *
-       (rat_linear_form n
-          (rat_elimination_coeffs
-            n (n - 1) C n)
-          v)^2
-       =
-       (v (n - 1))^2"
-      using result
-      by simp
-  qed
-
-  have terminal:
-    "alpha * ?y^2 + beta * ?z^2
-     =
-     (?u (n - 1))^2"
-    using general_terminal[of ?u]
-    .
-
-  have unit_value:
-    "?u (n - 1) = 1"
-    unfolding rat_unit_coordinate_def
-    by simp
-
-  have equation:
-    "(1::rat)^2 = alpha * ?y^2 + beta * ?z^2"
-    using terminal unit_value
-    by simp
-
-  have nonzero:
-    "(1::rat) \<noteq> 0 \<or> ?y \<noteq> 0 \<or> ?z \<noteq> 0"
-    by simp
-
-  show ?thesis
-    using equation nonzero
-    by blast
-qed
-
 context ordered_sym_bibd
 begin
 
@@ -5092,34 +4806,7 @@ lemma brc_extended_x_from_y_minus_sum:
      (\<Sum>j\<in>S.
         brc_extended_x_from_y_minus
           a b c d w (f j) i)"
-proof -
-  let ?F =
-    "\<lambda>(y :: nat \<Rightarrow> rat).
-       brc_extended_x_from_y_minus a b c d w y i"
-
-  have additive_F: "additive ?F"
-    unfolding additive_def
-  proof (intro allI)
-    fix x y :: "nat \<Rightarrow> rat"
-
-    have xy:
-      "x + y = (\<lambda>j. x j + y j)"
-      by (rule ext, simp)
-
-    show
-      "brc_extended_x_from_y_minus a b c d w (x + y) i
-       =
-       brc_extended_x_from_y_minus a b c d w x i
-       +
-       brc_extended_x_from_y_minus a b c d w y i"
-      unfolding xy
-      by (rule brc_extended_x_from_y_minus_add[OF i_bound])
-  qed
-
-  show ?thesis
-    using Modules.additive.sum[OF additive_F, of f S]
-    .
-qed
+by (rule rat_function_sum) (rule brc_extended_x_from_y_minus_add[OF i_bound])
 
 lemma brc_inverse_y_block_cong:
   assumes e0: "y (4*h) = z (4*h)"
@@ -5322,79 +5009,10 @@ lemma brc_extended_x_from_y_minus_linear_expansion:
         y j *
         brc_extended_x_from_y_minus a b c d w
           (rat_unit_coordinate j) i)"
-proof -
-  have basis:
-    "brc_extended_x_from_y_minus a b c d w y i
-     =
-     brc_extended_x_from_y_minus a b c d w
-       (rat_basis_expansion (\<v> + 1) y) i"
-    using brc_extended_x_from_y_minus_basis[
-      where i = i
-        and a = a and b = b and c = c and d = d
-        and w = w and y = y,
-      OF v_form w_pos i_bound]
-    .
-  have expansion_as_function_sum:
-    "(\<lambda>t. \<Sum>j\<in>{0..<\<v> + 1}.
-        y j * rat_unit_coordinate j t)
-     =
-     (\<Sum>j\<in>{0..<\<v> + 1}.
-        (\<lambda>t. y j * rat_unit_coordinate j t))"
-    using finite_sum_functions[
-      where S = "{0..<\<v> + 1}"
-        and f = "\<lambda>j t. y j * rat_unit_coordinate j t"]
-    by simp
-
-  have summed:
-    "brc_extended_x_from_y_minus a b c d w
-       (rat_basis_expansion (\<v> + 1) y) i
-     =
-     (\<Sum>j\<in>{0..<\<v> + 1}.
-        brc_extended_x_from_y_minus a b c d w
-          (\<lambda>t. y j * rat_unit_coordinate j t) i)"
-  proof -
-    have sum_rule:
-      "brc_extended_x_from_y_minus a b c d w
-         (\<Sum>j\<in>{0..<\<v> + 1}.
-            (\<lambda>t. y j * rat_unit_coordinate j t)) i
-       =
-       (\<Sum>j\<in>{0..<\<v> + 1}.
-          brc_extended_x_from_y_minus a b c d w
-            (\<lambda>t. y j * rat_unit_coordinate j t) i)"
-      by (rule brc_extended_x_from_y_minus_sum[OF i_bound])
-
-    show ?thesis
-      unfolding rat_basis_expansion_def
-      using sum_rule
-      unfolding expansion_as_function_sum
-      .
-  qed
-
-  have scaled:
-    "(\<Sum>j\<in>{0..<\<v> + 1}.
-       brc_extended_x_from_y_minus a b c d w
-         (\<lambda>t. y j * rat_unit_coordinate j t) i)
-     =
-     (\<Sum>j\<in>{0..<\<v> + 1}.
-       y j *
-       brc_extended_x_from_y_minus a b c d w
-         (rat_unit_coordinate j) i)"
-  proof -
-    show ?thesis
-      apply (rule sum.cong)
-       apply (rule refl)
-    using brc_extended_x_from_y_minus_scale[
-      where i = i
-        and a = a and b = b and c = c and d = d
-        and w = w]
-      i_bound
-      by simp
-  qed
-
-  show ?thesis
-    using basis summed scaled
-    by simp
-qed
+apply (rule rat_function_linear_expansion)
+    apply (rule brc_extended_x_from_y_minus_add[OF i_bound])
+   apply (rule brc_extended_x_from_y_minus_scale[OF i_bound])
+  by (rule brc_extended_x_from_y_minus_basis[OF v_form w_pos i_bound])
 
 lemma brc_minus_coeff_xv1_representation:
   assumes v_form:
@@ -6483,30 +6101,12 @@ lemma rat_as_int_quotient:
     "d \<noteq> 0"
     "r = of_int n / of_int d"
 proof -
-  obtain n d :: int where q:
-    "quotient_of r = (n,d)"
+  obtain n d :: int where q: "quotient_of r = (n,d)"
     by (cases "quotient_of r") auto
-
-  have d_pos:
-    "0 < d"
-    using Rat.quotient_of_denom_pos[
-      OF q]
-    .
-
-  have d_nz:
-    "d \<noteq> 0"
-    using d_pos
-    by simp
-
-  have representation:
-    "r = of_int n / of_int d"
-    using Rat.quotient_of_div[
-      OF q]
-    .
-
-  show thesis
-    using that[OF d_nz representation]
-    .
+  have "d \<noteq> 0"
+    using Rat.quotient_of_denom_pos[OF q] by simp
+  then show thesis
+    using that Rat.quotient_of_div[OF q] by blast
 qed
 
 lemma rat_quadratic_solution_to_int:
@@ -6523,294 +6123,54 @@ lemma rat_quadratic_solution_to_int:
        (X \<noteq> 0 \<or> Y \<noteq> 0 \<or> Z \<noteq> 0) \<and>
        X^2 = A * Y^2 + B * Z^2"
 proof -
-  obtain nx dx :: int where
-    dx_nz: "dx \<noteq> 0"
-    and x_rep:
-      "x = of_int nx / of_int dx"
-    using rat_as_int_quotient[of x]
-    by blast
-
-  obtain ny dy :: int where
-    dy_nz: "dy \<noteq> 0"
-    and y_rep:
-      "y = of_int ny / of_int dy"
-    using rat_as_int_quotient[of y]
-    by blast
-
-  obtain nz dz :: int where
-    dz_nz: "dz \<noteq> 0"
-    and z_rep:
-      "z = of_int nz / of_int dz"
-    using rat_as_int_quotient[of z]
-    by blast
+  obtain nx dx :: int where dx: "dx \<noteq> 0"
+    and x_rep: "x = of_int nx / of_int dx"
+    using rat_as_int_quotient[of x] by blast
+  obtain ny dy :: int where dy: "dy \<noteq> 0"
+    and y_rep: "y = of_int ny / of_int dy"
+    using rat_as_int_quotient[of y] by blast
+  obtain nz dz :: int where dz: "dz \<noteq> 0"
+    and z_rep: "z = of_int nz / of_int dz"
+    using rat_as_int_quotient[of z] by blast
 
   let ?D = "dx * dy * dz"
   let ?X = "nx * dy * dz"
   let ?Y = "ny * dx * dz"
   let ?Z = "nz * dx * dy"
-
-  have D_nz:
-    "?D \<noteq> 0"
-    using dx_nz dy_nz dz_nz
-    by simp
-
-  have D_rat_nz:
-    "(of_int ?D :: rat) \<noteq> 0"
-    using D_nz
-    by simp
-
-  have scale_x:
-    "(of_int ?D :: rat) * x = of_int ?X"
-    unfolding x_rep
-    using dx_nz
-    by simp
-
-  have scale_y:
-    "(of_int ?D :: rat) * y = of_int ?Y"
-    unfolding y_rep
-    using dy_nz
-    by simp
-
-  have scale_z:
-    "(of_int ?D :: rat) * z = of_int ?Z"
-    unfolding z_rep
-    using dz_nz
-    by simp
+  have scale_x: "(of_int ?D :: rat) * x = of_int ?X"
+    unfolding x_rep using dx by simp
+  have scale_y: "(of_int ?D :: rat) * y = of_int ?Y"
+    unfolding y_rep using dy by simp
+  have scale_z: "(of_int ?D :: rat) * z = of_int ?Z"
+    unfolding z_rep using dz by simp
 
   have scaled_equation:
-    "((of_int ?D :: rat) * x)^2
-     =
-     of_int A * ((of_int ?D :: rat) * y)^2
-     +
-     of_int B * ((of_int ?D :: rat) * z)^2"
+    "((of_int ?D :: rat) * x)^2 =
+      of_int A * ((of_int ?D :: rat) * y)^2 +
+      of_int B * ((of_int ?D :: rat) * z)^2"
   proof -
-    have
-      "((of_int ?D :: rat) * x)^2
-       =
-       (of_int ?D :: rat)^2 * x^2"
+    have "((of_int ?D :: rat) * x)^2 = (of_int ?D :: rat)^2 * x^2"
       by (simp add: power2_eq_square)
-
-    also have
-      "... =
-       (of_int ?D :: rat)^2 *
-       (of_int A * y^2 + of_int B * z^2)"
-      using equation
-      by simp
-
-    also have
-      "... =
-       of_int A * ((of_int ?D :: rat) * y)^2
-       +
-       of_int B * ((of_int ?D :: rat) * z)^2"
-      by (simp add:
-          power2_eq_square algebra_simps)
-
+    also have "... = (of_int ?D :: rat)^2 * (of_int A * y^2 + of_int B * z^2)"
+      using equation by simp
+    also have "... = of_int A * ((of_int ?D :: rat) * y)^2 +
+        of_int B * ((of_int ?D :: rat) * z)^2"
+      by (simp add: power2_eq_square algebra_simps)
     finally show ?thesis .
   qed
-
-  have scale_x_sq:
-    "((of_int ?D :: rat) * x)^2
-     =
-     (of_int ?X :: rat)^2"
-    using scale_x
-    by (rule arg_cong[
-      where f = "\<lambda>t::rat. t^2"])
-
-  have scale_y_sq:
-    "((of_int ?D :: rat) * y)^2
-     =
-     (of_int ?Y :: rat)^2"
-    using scale_y
-    by (rule arg_cong[
-      where f = "\<lambda>t::rat. t^2"])
-
-  have scale_z_sq:
-    "((of_int ?D :: rat) * z)^2
-     =
-     (of_int ?Z :: rat)^2"
-    using scale_z
-    by (rule arg_cong[
-      where f = "\<lambda>t::rat. t^2"])
-
   have rat_equation:
-    "(of_int ?X :: rat)^2
-     =
-     of_int A * (of_int ?Y :: rat)^2
-     +
-     of_int B * (of_int ?Z :: rat)^2"
-  proof -
-    have
-      "(of_int ?X :: rat)^2
-       =
-       ((of_int ?D :: rat) * x)^2"
-      using scale_x_sq
-      by simp
-
-    also have
-      "... =
-       of_int A * ((of_int ?D :: rat) * y)^2
-       +
-       of_int B * ((of_int ?D :: rat) * z)^2"
-      using scaled_equation
-      .
-
-    also have
-      "... =
-       of_int A * (of_int ?Y :: rat)^2
-       +
-       of_int B * (of_int ?Z :: rat)^2"
-      using scale_y_sq scale_z_sq
-      by (simp only:)
-
-    finally show ?thesis .
-  qed
-
+    "(of_int ?X :: rat)^2 = of_int A * (of_int ?Y :: rat)^2 +
+      of_int B * (of_int ?Z :: rat)^2"
+    using scaled_equation by (simp only: scale_x scale_y scale_z)
   have cast_equation:
-    "(of_int (?X^2) :: rat)
-     =
-     of_int (A * ?Y^2 + B * ?Z^2)"
-    using rat_equation
-    by simp
-
-  have int_equation:
-    "?X^2 = A * ?Y^2 + B * ?Z^2"
-    using cast_equation
-    by (metis of_int_eq_iff)
-
-  have scaled_nonzero:
-    "(of_int ?D :: rat) * x \<noteq> 0 \<or>
-     (of_int ?D :: rat) * y \<noteq> 0 \<or>
-     (of_int ?D :: rat) * z \<noteq> 0"
-  proof -
-    from nonzero show ?thesis
-    proof
-      assume x_nz:
-        "x \<noteq> 0"
-
-      have
-        "(of_int ?D :: rat) * x \<noteq> 0"
-        using D_rat_nz x_nz
-        by simp
-
-      then show ?thesis
-        by blast
-    next
-      assume yz_nz:
-        "y \<noteq> 0 \<or> z \<noteq> 0"
-
-      from yz_nz show ?thesis
-      proof
-        assume y_nz:
-          "y \<noteq> 0"
-
-        have
-          "(of_int ?D :: rat) * y \<noteq> 0"
-          using D_rat_nz y_nz
-          by simp
-
-        then show ?thesis
-          by blast
-      next
-        assume z_nz:
-          "z \<noteq> 0"
-
-        have
-          "(of_int ?D :: rat) * z \<noteq> 0"
-          using D_rat_nz z_nz
-          by simp
-
-        then show ?thesis
-          by blast
-      qed
-    qed
-  qed
-
-  have int_nonzero:
-    "?X \<noteq> 0 \<or> ?Y \<noteq> 0 \<or> ?Z \<noteq> 0"
-  proof -
-    from scaled_nonzero show ?thesis
-    proof
-      assume x_scaled_nz:
-        "(of_int ?D :: rat) * x \<noteq> 0"
-
-      have X_nz:
-        "?X \<noteq> 0"
-      proof
-        assume X_zero:
-          "?X = 0"
-
-        have
-          "(of_int ?D :: rat) * x = 0"
-          using scale_x X_zero
-          by simp
-
-        then show False
-          using x_scaled_nz
-          by contradiction
-      qed
-
-      show ?thesis
-        using X_nz
-        by blast
-    next
-      assume yz_scaled_nz:
-        "(of_int ?D :: rat) * y \<noteq> 0 \<or>
-         (of_int ?D :: rat) * z \<noteq> 0"
-
-      from yz_scaled_nz show ?thesis
-      proof
-        assume y_scaled_nz:
-          "(of_int ?D :: rat) * y \<noteq> 0"
-
-        have Y_nz:
-          "?Y \<noteq> 0"
-        proof
-          assume Y_zero:
-            "?Y = 0"
-
-          have
-            "(of_int ?D :: rat) * y = 0"
-            using scale_y Y_zero
-            by simp
-
-          then show False
-            using y_scaled_nz
-            by contradiction
-        qed
-
-        show ?thesis
-          using Y_nz
-          by blast
-      next
-        assume z_scaled_nz:
-          "(of_int ?D :: rat) * z \<noteq> 0"
-
-        have Z_nz:
-          "?Z \<noteq> 0"
-        proof
-          assume Z_zero:
-            "?Z = 0"
-
-          have
-            "(of_int ?D :: rat) * z = 0"
-            using scale_z Z_zero
-            by simp
-
-          then show False
-            using z_scaled_nz
-            by contradiction
-        qed
-
-        show ?thesis
-          using Z_nz
-          by blast
-      qed
-    qed
-  qed
-
+    "(of_int (?X^2) :: rat) = of_int (A * ?Y^2 + B * ?Z^2)"
+    using rat_equation by simp
+  have int_equation: "?X^2 = A * ?Y^2 + B * ?Z^2"
+    using cast_equation by (metis of_int_eq_iff)
+  have int_nonzero: "?X \<noteq> 0 \<or> ?Y \<noteq> 0 \<or> ?Z \<noteq> 0"
+    using nonzero dx dy dz unfolding x_rep y_rep z_rep by auto
   show ?thesis
-    using int_nonzero int_equation
-    by blast
+    using int_nonzero int_equation by blast
 qed
 
 context ordered_sym_bibd
@@ -6968,88 +6328,25 @@ theorem bruck_ryser_chowla_odd:
          (-1::int)^((\<v> - 1) div 2) *
          int \<Lambda> * z^2"
 proof -
-  have mod_cases:
-    "\<v> mod 4 = 1 \<or> \<v> mod 4 = 3"
-    using odd_v
-    by presburger
-
-  from mod_cases show ?thesis
+  have "\<v> mod 4 = 1 \<or> \<v> mod 4 = 3"
+    using odd_v by presburger
+  then show ?thesis
   proof
-    assume mod1:
-      "\<v> mod 4 = 1"
-
-    obtain w where v_form:
-      "\<v> = 4 * w + 1"
-      using brc_v_eq_4w_plus_1[
-        OF mod1]
-      by blast
-
-    obtain x y z :: int where nz:
-      "x \<noteq> 0 \<or> y \<noteq> 0 \<or> z \<noteq> 0"
-      and eq:
-      "x^2 =
-       int (\<k> - \<Lambda>) * y^2 +
-       int \<Lambda> * z^2"
-      using brc_plus_integer_solution_exists[
-        OF v_form]
-      by blast
-
-    have sign:
-      "(-1::int)^((\<v> - 1) div 2) = 1"
-      using brc_sign_plus[
-        OF v_form]
-      .
-
-    have signed_eq:
-      "x^2 =
-       int (\<k> - \<Lambda>) * y^2 +
-       (-1::int)^((\<v> - 1) div 2) *
-       int \<Lambda> * z^2"
-      using eq sign
-      by simp
-
+    assume "\<v> mod 4 = 1"
+    then obtain w where v_form: "\<v> = 4 * w + 1"
+      using brc_v_eq_4w_plus_1 by blast
     show ?thesis
-      using nz signed_eq
-      by blast
+      using brc_plus_integer_solution_exists[OF v_form]
+      unfolding brc_sign_plus[OF v_form]
+      by simp
   next
-    assume mod3:
-      "\<v> mod 4 = 3"
-
-    obtain w where w_pos:
-      "0 < w"
-      and v_form:
-      "\<v> = 4 * w - 1"
-      using brc_v_eq_4w_minus_1[
-        OF mod3]
-      by blast
-
-    obtain x y z :: int where nz:
-      "x \<noteq> 0 \<or> y \<noteq> 0 \<or> z \<noteq> 0"
-      and eq:
-      "x^2 =
-       int (\<k> - \<Lambda>) * y^2 -
-       int \<Lambda> * z^2"
-      using brc_minus_integer_solution_exists[
-        OF v_form w_pos]
-      by blast
-
-    have sign:
-      "(-1::int)^((\<v> - 1) div 2) = -1"
-      using brc_sign_minus[
-        OF v_form w_pos]
-      .
-
-    have signed_eq:
-      "x^2 =
-       int (\<k> - \<Lambda>) * y^2 +
-       (-1::int)^((\<v> - 1) div 2) *
-       int \<Lambda> * z^2"
-      using eq sign
-      by simp
-
+    assume "\<v> mod 4 = 3"
+    then obtain w where w_pos: "0 < w" and v_form: "\<v> = 4 * w - 1"
+      using brc_v_eq_4w_minus_1 by blast
     show ?thesis
-      using nz signed_eq
-      by blast
+      using brc_minus_integer_solution_exists[OF v_form w_pos]
+      unfolding brc_sign_minus[OF v_form w_pos]
+      by simp
   qed
 qed
 
